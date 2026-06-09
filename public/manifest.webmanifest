@@ -1,0 +1,18 @@
+{
+  "name": "Timely",
+  "short_name": "Timely",
+  "description": "A mobile-first reminder and calendar recording assistant.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#eef1f5",
+  "theme_color": "#177c72",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

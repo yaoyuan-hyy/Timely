@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#177c72" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Timely" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Timely</title>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/icon.svg" />
+    <link rel="stylesheet" href="/app.css" />
+  </head>
+  <body>
+    <main class="phone-shell">
+      <header class="app-header">
+        <div>
+          <p id="todayText">今天</p>
+          <h1>Timely</h1>
+        </div>
+        <span>本机</span>
+      </header>
+
+      <section class="content-area">
+        <section class="view active" data-view-panel="chat">
+          <div class="section-head">
+            <div>
+              <p>Agent</p>
+              <h2>对话记录</h2>
+            </div>
+          </div>
+          <div class="messages" id="messages">
+            <div class="message assistant">你好，要记录什么？</div>
+          </div>
+          <form class="composer" id="composer">
+            <input id="userInput" autocomplete="off" placeholder="说点什么..." aria-label="输入要记录的内容" />
+            <button type="submit">发送</button>
+          </form>
+        </section>
+
+        <section class="view" data-view-panel="calendar">
+          <div class="section-head">
+            <div>
+              <p>Calendar</p>
+              <h2>内部日历</h2>
+            </div>
+          </div>
+          <div class="record-list" id="eventList"></div>
+        </section>
+
+        <section class="view" data-view-panel="reminders">
+          <div class="section-head">
+            <div>
+              <p>Reminder</p>
+              <h2>提醒</h2>
+            </div>
+          </div>
+          <div class="record-list" id="reminderList"></div>
+        </section>
+
+        <section class="view" data-view-panel="settings">
+          <div class="section-head">
+            <div>
+              <p>Settings</p>
+              <h2>设置</h2>
+            </div>
+          </div>
+          <button class="reset-button" id="resetButton" type="button">重置示例数据</button>
+        </section>
+      </section>
+
+      <nav class="bottom-nav" aria-label="Timely sections">
+        <button class="active" type="button" data-view="chat">对话</button>
+        <button type="button" data-view="calendar">日历</button>
+        <button type="button" data-view="reminders">提醒</button>
+        <button type="button" data-view="settings">设置</button>
+      </nav>
+    </main>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

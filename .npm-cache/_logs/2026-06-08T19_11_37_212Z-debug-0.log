@@ -1,0 +1,25 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.13.0
+2 info using node@v24.16.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:E:\Timely\.npmrc
+5 silly config load:file:C:\Users\lenovo1\.npmrc
+6 silly config load:file:C:\Users\lenovo1\AppData\Roaming\npm\etc\npmrc
+7 verbose title npm view next version
+8 verbose argv "view" "next" "version" "--registry" "https://registry.npmjs.org/" "--cache" "E:\\Timely\\.npm-cache"
+9 verbose logfile logs-max:10 dir:E:\Timely\.npm-cache\_logs\2026-06-08T19_11_37_212Z-
+10 verbose logfile E:\Timely\.npm-cache\_logs\2026-06-08T19_11_37_212Z-debug-0.log
+11 silly logfile done cleaning log files
+12 http fetch GET 200 https://registry.npmjs.org/npm 1005ms
+13 http fetch GET 200 https://registry.npmjs.org/next 1303ms (cache miss)
+14 verbose cwd E:\Timely
+15 verbose os Windows_NT 10.0.26200
+16 verbose node v24.16.0
+17 verbose npm  v11.13.0
+18 notice
+18 notice New minor version of npm available! 11.13.0 -> 11.16.0
+18 notice Changelog: https://github.com/npm/cli/releases/tag/v11.16.0
+18 notice To update run: npm install -g npm@11.16.0
+18 notice  { force: true, Symbol(proc-log.meta): true }
+19 verbose exit 0
+20 info ok
