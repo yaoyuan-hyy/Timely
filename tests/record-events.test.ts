@@ -85,6 +85,18 @@ function stateWithFutureMeeting(): TimelyState {
 }
 
 {
+  const state = resolveEventRecordInput(emptyState(), "6月31日下午3点开会", {
+    createId: deterministicIds(),
+    now
+  });
+
+  assert.equal(state.events.length, 0);
+  assert.equal(state.pendingClarification?.kind, "event_time");
+  assert.equal(state.pendingClarification?.title, "开会");
+  assert.equal(state.messages.at(-1)?.content, "什么时候？");
+}
+
+{
   const pending = resolveEventRecordInput(emptyState(), "帮我记录一个会议", {
     createId: deterministicIds(),
     now

@@ -12,6 +12,7 @@ export type MiniMaxEventParseResult = {
 type ParseOptions = {
   now?: Date;
   signal?: AbortSignal;
+  timeoutMs?: number;
 };
 
 type MiniMaxChoice = {
@@ -22,6 +23,7 @@ type MiniMaxChoice = {
 
 const DEFAULT_OPENAI_BASE_URL = "https://api.minimaxi.com/v1";
 const DEFAULT_MINIMAX_MODEL = "MiniMax-M3";
+const DEFAULT_REQUEST_TIMEOUT_MS = 8000;
 
 const eventParseSchema = {
   type: "object",
@@ -69,6 +71,9 @@ export async function parseMiniMaxEventInput(
     throw new Error("OPENAI_API_KEY or MINIMAX_API_KEY is not configured");
   }
 
+  const timeoutMs = options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+  const signal = options.signal ?? AbortSignal.timeout(timeoutMs);
+
   const response = await fetch(getMiniMaxChatCompletionsUrl(), {
     method: "POST",
     headers: {
@@ -76,7 +81,7 @@ export async function parseMiniMaxEventInput(
       "Content-Type": "application/json"
     },
     body: JSON.stringify(buildMiniMaxRequest(input, options.now ?? new Date())),
-    signal: options.signal
+    signal
   });
 
   if (!response.ok) {

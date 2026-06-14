@@ -414,7 +414,7 @@ button {
 
 .calendar-month {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 10px;
 }
 
@@ -530,21 +530,14 @@ button {
   background: #5da8f2;
 }
 
-.calendar-scroll {
+.calendar-month-section {
+  min-width: 0;
   min-height: 0;
   overflow-y: auto;
   display: grid;
-  align-content: start;
-  gap: 18px;
-  padding: 2px 0 18px;
-  scroll-snap-type: y proximity;
-}
-
-.calendar-month-section {
-  min-width: 0;
-  display: grid;
   gap: 8px;
-  scroll-snap-align: start;
+  align-content: start;
+  padding: 2px 0 18px;
 }
 
 .calendar-month-section h3 {
@@ -615,6 +608,11 @@ button {
 
 .month-day.muted {
   color: rgba(16, 24, 32, 0.34);
+}
+
+.month-day.placeholder {
+  pointer-events: none;
+  border-bottom-color: transparent;
 }
 
 .month-day.today strong,
@@ -749,6 +747,81 @@ button {
   color: #3677aa;
   font-size: 13px;
   font-weight: 720;
+}
+
+.cancelled-records {
+  min-height: 0;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(143, 186, 225, 0.24);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.cancelled-records-head,
+.cancelled-record {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cancelled-records-head h2 {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.cancelled-records-head span {
+  color: #5f7d94;
+  font-size: 12px;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.cancelled-records-list {
+  max-height: 112px;
+  overflow-y: auto;
+  display: grid;
+  gap: 7px;
+}
+
+.cancelled-record {
+  min-height: 44px;
+  padding: 8px 8px 8px 10px;
+  border-radius: 14px;
+  background: rgba(232, 245, 255, 0.7);
+}
+
+.cancelled-record-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.cancelled-record h3,
+.cancelled-record p {
+  margin: 0;
+}
+
+.cancelled-record h3 {
+  max-width: 220px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 780;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cancelled-record p {
+  margin-top: 3px;
+  color: #5f7d94;
+  font-size: 12px;
+  line-height: 1.15;
+  font-weight: 680;
 }
 
 .day-group {

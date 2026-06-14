@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "npm run test:static && npm run test:behavior",
+    "test:static": "node --test tests/minimax-api.test.ts tests/package-scripts.test.ts tests/static-preview.test.ts tests/ui-shell.test.ts",
+    "test:behavior": "tsc tests/record-events.test.ts tests/time.test.ts tests/state.test.ts lib/event-recording.ts lib/types.ts lib/time.ts lib/state.ts --module commonjs --moduleResolution node --target ES2020 --outDir /tmp/timely-cjs --esModuleInterop --skipLibCheck --strict && node --test /tmp/timely-cjs/tests/record-events.test.js /tmp/timely-cjs/tests/time.test.js /tmp/timely-cjs/tests/state.test.js",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

@@ -1,4 +1,5 @@
 import type { CalendarEvent, ConversationMessage, TimelyState } from "./types";
+import { buildShanghaiIso, getShanghaiParts, isValidShanghaiDateParts, toShanghaiDayKey, toShanghaiIso } from "./time";
 
 type ResolveOptions = {
   now?: Date;
@@ -33,8 +34,6 @@ type DeleteTarget = {
   startsAt: string | null;
   period: "morning" | "afternoon" | "evening" | null;
 };
-
-const SHANGHAI_OFFSET_MINUTES = 8 * 60;
 
 export function resolveEventRecordInput(
   current: TimelyState,
@@ -331,7 +330,7 @@ function parseDateTime(text: string, now: Date) {
   const date = parseDate(text, now);
   const time = parseTime(text);
 
-  if (!date || !time) {
+  if (!date || !time || !isValidShanghaiDateParts(date.year, date.month, date.day)) {
     return null;
   }
 
@@ -341,11 +340,13 @@ function parseDateTime(text: string, now: Date) {
 function parseDeleteTarget(text: string, now: Date): DeleteTarget {
   const date = parseDate(text, now);
   const time = parseTime(text);
-  const startsAt = date && time ? buildShanghaiIso(date.year, date.month, date.day, time.hour, time.minute) : null;
+  const validDate = date && isValidShanghaiDateParts(date.year, date.month, date.day) ? date : null;
+  const startsAt =
+    validDate && time ? buildShanghaiIso(validDate.year, validDate.month, validDate.day, time.hour, time.minute) : null;
 
   return {
     title: extractDeleteTitle(text),
-    targetDate: date ? formatDateKey(date) : null,
+    targetDate: validDate ? formatDateKey(validDate) : null,
     startsAt,
     period: parsePeriod(text)
   };
@@ -530,7 +531,7 @@ function isLikelyEventRecord(text: string) {
     return false;
   }
 
-  return /(记录|记一下|记一笔|新增|添加|会议|日程|事情|事项|有个|有一个|有一场|有一次)/.test(text);
+  return /(记录|记一下|记一笔|新增|添加|会议|开会|日程|事情|事项|有个|有一个|有一场|有一次)/.test(text);
 }
 
 function isDeleteRequest(text: string) {
@@ -698,18 +699,6 @@ function normalizeText(text: string) {
     .trim();
 }
 
-function getShanghaiParts(date: Date) {
-  const shifted = new Date(date.getTime() + SHANGHAI_OFFSET_MINUTES * 60 * 1000);
-
-  return {
-    year: shifted.getUTCFullYear(),
-    month: shifted.getUTCMonth() + 1,
-    day: shifted.getUTCDate(),
-    hour: shifted.getUTCHours(),
-    minute: shifted.getUTCMinutes()
-  };
-}
-
 function addDays(parts: DateParts, days: number): DateParts {
   const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + days));
 
@@ -720,30 +709,16 @@ function addDays(parts: DateParts, days: number): DateParts {
   };
 }
 
-function buildShanghaiIso(year: number, month: number, day: number, hour: number, minute: number) {
-  const paddedMonth = String(month).padStart(2, "0");
-  const paddedDay = String(day).padStart(2, "0");
-  const paddedHour = String(hour).padStart(2, "0");
-  const paddedMinute = String(minute).padStart(2, "0");
-
-  return `${year}-${paddedMonth}-${paddedDay}T${paddedHour}:${paddedMinute}:00+08:00`;
-}
-
 function formatDateKey(parts: DateParts) {
   return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
 }
 
 function dayKeyFromIso(iso: string) {
-  return formatDateKey(getShanghaiParts(new Date(iso)));
+  return toShanghaiDayKey(iso);
 }
 
 function dateKeyFromIso(iso: string | null | undefined) {
   return iso ? dayKeyFromIso(iso) : null;
-}
-
-function toShanghaiIso(date: Date) {
-  const parts = getShanghaiParts(date);
-  return buildShanghaiIso(parts.year, parts.month, parts.day, parts.hour, parts.minute);
 }
 
 function makeId(prefix: string) {

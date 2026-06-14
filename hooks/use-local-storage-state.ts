@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 
-export function useLocalStorageState<T>(key: string, fallback: T) {
+function identityNormalizer<T>(value: unknown) {
+  return value as T;
+}
+
+export function useLocalStorageState<T>(
+  key: string,
+  fallback: T,
+  normalize: (value: unknown, fallback: T) => T = identityNormalizer
+) {
   const [value, setValue] = useState<T>(fallback);
   const [isReady, setIsReady] = useState(false);
 
@@ -10,12 +18,14 @@ export function useLocalStorageState<T>(key: string, fallback: T) {
     try {
       const stored = window.localStorage.getItem(key);
       if (stored) {
-        setValue(JSON.parse(stored) as T);
+        setValue(normalize(stored, fallback));
       }
+    } catch {
+      setValue(fallback);
     } finally {
       setIsReady(true);
     }
-  }, [key]);
+  }, [fallback, key, normalize]);
 
   useEffect(() => {
     if (!isReady) {

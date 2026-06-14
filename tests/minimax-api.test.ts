@@ -18,6 +18,8 @@ assert.match(parser, /MiniMax-M3/);
 assert.match(parser, /response_format/);
 assert.match(parser, /json_object/);
 assert.match(parser, /parseMiniMaxEventInput/);
+assert.match(parser, /timeoutMs/);
+assert.match(parser, /AbortSignal\.timeout/);
 assert.match(parser, /extractMiniMaxJsonContent/);
 assert.match(parser, /JSON\.parse\(extractMiniMaxJsonContent\(content\)\)/);
 assert.match(parser, /```json/);
@@ -36,4 +38,5 @@ assert.match(parser, /normalizeMiniMaxDateTime/);
 
 assert.match(route, /export async function POST/);
 assert.match(route, /parseMiniMaxEventInput/);
+assert.match(route, /payload\.now/);
 assert.match(route, /NextResponse\.json/);
