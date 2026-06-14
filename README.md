@@ -1,14 +1,14 @@
 # Timely
 
-Timely is a mobile-first Web/PWA client for natural-language calendar recording and reminders.
+Timely is a mobile-first Web/PWA client for natural-language personal records.
 
-The product is not a time-planning, task-priority, focus-timer, or productivity-insight app. Its MVP loop is:
+The product is not a reminder, time-planning, task-priority, focus-timer, or productivity-insight app. The current MVP loop is:
 
 ```text
-User types a natural-language note
-  -> local Agent / AI Agent parses it
-  -> app saves an internal calendar event or reminder
-  -> user checks it in the mobile client
+User types a natural-language event record
+  -> local parser extracts the time point and title
+  -> app saves a local CalendarEvent
+  -> user checks it in the record list
 ```
 
 ## Stack
@@ -37,14 +37,15 @@ http://localhost:3000
 
 ## Current MVP Step
 
-The first MVP step resets the old planner direction and creates the mobile client shell:
+The current MVP step focuses on event records:
 
 - Mobile-first Timely app frame
-- Bottom navigation: Chat, Calendar, Reminders, Settings
-- Internal calendar demo data
-- Reminder demo data
-- Local chat input with a small rule-based parser for PRD examples
-- localStorage persistence under `timely-mobile-state-v1`
+- Bottom navigation: Chat, Records, Settings
+- Local event demo data
+- Local chat input backed by `lib/event-recording.ts`
+- Past and future event time points
+- One-turn clarification when the event time is missing
+- localStorage persistence under `timely-event-record-state-v1`
 
 ## Product Docs
 
@@ -64,8 +65,11 @@ components/
 hooks/
   use-local-storage-state.ts
 lib/
+  event-recording.ts
   seed-data.ts
   stats.ts
   time.ts
   types.ts
+tests/
+  record-events.test.ts
 ```

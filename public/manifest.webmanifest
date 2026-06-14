@@ -1,11 +1,11 @@
 {
   "name": "Timely",
   "short_name": "Timely",
-  "description": "A mobile-first reminder and calendar recording assistant.",
+  "description": "A mobile-first natural-language event recording app.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#eef1f5",
-  "theme_color": "#177c72",
+  "theme_color": "#9ccfff",
   "orientation": "portrait",
   "icons": [
     {

@@ -4,7 +4,7 @@ export type ReminderStatus = "active" | "done" | "cancelled";
 
 export type MessageRole = "user" | "assistant";
 
-export type AppView = "chat" | "calendar" | "reminders" | "settings";
+export type AppView = "chat" | "calendar" | "settings";
 
 export type CalendarEvent = {
   id: string;
@@ -38,47 +38,20 @@ export type ConversationMessage = {
   createdAt: string;
 };
 
-export type PendingClarification = {
-  kind: "event_time";
-  title: string;
-  sourceText: string;
-  createdAt: string;
-};
-
-export type AgentIntent =
-  | "create_event"
-  | "create_reminder"
-  | "update_event"
-  | "delete_event"
-  | "query_calendar"
-  | "unknown";
-
-export type AgentParseResult = {
-  intent: AgentIntent;
-  needsClarification: boolean;
-  clarificationQuestion: string | null;
-  reply: string;
-  event?: {
-    title: string;
-    startsAt: string;
-    endsAt: string | null;
-    location: string | null;
-    notes: string | null;
-    reminderOffsetMinutes: number | null;
-    matchHint: string | null;
-    rawText: string;
-  } | null;
-  reminder?: {
-    title: string;
-    remindAt: string;
-    relatedEventId: string | null;
-    rawText: string;
-  } | null;
-  query?: {
-    rangeStart: string;
-    rangeEnd: string;
-  } | null;
-};
+export type PendingClarification =
+  | {
+      kind: "event_time";
+      title: string;
+      sourceText: string;
+      createdAt: string;
+    }
+  | {
+      kind: "event_delete";
+      title: string | null;
+      targetDate: string | null;
+      sourceText: string;
+      createdAt: string;
+    };
 
 export type TimelyState = {
   events: CalendarEvent[];

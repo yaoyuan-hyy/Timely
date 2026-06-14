@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Timely",
-  description: "A mobile-first reminder and calendar recording assistant."
+  description: "A mobile-first natural-language event recording app."
 };
 
 export default function RootLayout({

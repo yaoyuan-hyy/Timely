@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#177c72" />
+    <meta name="theme-color" content="#9ccfff" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Timely" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -15,48 +15,55 @@
   <body>
     <main class="phone-shell">
       <header class="app-header">
-        <div>
+        <button class="menu-trigger" id="menuButton" type="button" aria-controls="drawer" aria-expanded="false" aria-label="打开菜单">
+          ☰
+        </button>
+        <div class="app-title">
           <p id="todayText">今天</p>
           <h1>Timely</h1>
         </div>
-        <span>本机</span>
+        <button class="clear-chat-button" id="clearChatButton" type="button" title="清空聊天记录" aria-label="清空聊天记录">
+          ×
+        </button>
       </header>
+
+      <div class="drawer-backdrop" id="drawerBackdrop"></div>
+      <aside class="side-drawer" id="drawer" aria-label="主菜单">
+        <div class="drawer-head">
+          <div>
+            <p>Menu</p>
+            <h2>Timely</h2>
+          </div>
+          <button class="drawer-close" id="drawerClose" type="button" aria-label="关闭菜单">×</button>
+        </div>
+        <nav class="drawer-nav" aria-label="切换页面">
+          <button class="nav-button active" type="button" data-view="chat">对话</button>
+          <button class="nav-button" type="button" data-view="calendar">记录</button>
+          <button class="nav-button" type="button" data-view="settings">设置</button>
+        </nav>
+      </aside>
 
       <section class="content-area">
         <section class="view active" data-view-panel="chat">
-          <div class="section-head">
-            <div>
-              <p>Agent</p>
-              <h2>对话记录</h2>
-            </div>
+          <div class="home-prompt" id="homePrompt">
+            <div class="prompt-spark">✦</div>
+            <h2>想记录什么，尽管说吧！</h2>
           </div>
-          <div class="messages" id="messages">
-            <div class="message assistant">你好，要记录什么？</div>
-          </div>
+          <div class="messages hidden" id="messages"></div>
           <form class="composer" id="composer">
-            <input id="userInput" autocomplete="off" placeholder="说点什么..." aria-label="输入要记录的内容" />
-            <button type="submit">发送</button>
+            <input id="userInput" autocomplete="off" placeholder="记录某个时间点发生的事..." aria-label="输入要记录的内容" />
+            <button class="voice-action" id="voiceButton" type="button" aria-label="语音输入" aria-pressed="false">麦</button>
           </form>
         </section>
 
         <section class="view" data-view-panel="calendar">
           <div class="section-head">
             <div>
-              <p>Calendar</p>
-              <h2>内部日历</h2>
+              <p>Events</p>
+              <h2>事件记录</h2>
             </div>
           </div>
-          <div class="record-list" id="eventList"></div>
-        </section>
-
-        <section class="view" data-view-panel="reminders">
-          <div class="section-head">
-            <div>
-              <p>Reminder</p>
-              <h2>提醒</h2>
-            </div>
-          </div>
-          <div class="record-list" id="reminderList"></div>
+          <div class="calendar-static" id="calendarView"></div>
         </section>
 
         <section class="view" data-view-panel="settings">
@@ -66,16 +73,9 @@
               <h2>设置</h2>
             </div>
           </div>
-          <button class="reset-button" id="resetButton" type="button">重置示例数据</button>
+          <button class="reset-button" id="resetButton" type="button">重置示例记录</button>
         </section>
       </section>
-
-      <nav class="bottom-nav" aria-label="Timely sections">
-        <button class="active" type="button" data-view="chat">对话</button>
-        <button type="button" data-view="calendar">日历</button>
-        <button type="button" data-view="reminders">提醒</button>
-        <button type="button" data-view="settings">设置</button>
-      </nav>
     </main>
 
     <script type="module" src="/app.js"></script>

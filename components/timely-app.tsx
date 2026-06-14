@@ -1,73 +1,112 @@
 "use client";
 
 import {
-  Bell,
-  BellRing,
   CalendarDays,
-  CheckCircle2,
+  ChevronLeft,
   Clock3,
+  Menu,
   MessageCircle,
+  Mic,
   RefreshCcw,
-  Send,
   Settings,
   ShieldCheck,
-  Smartphone,
+  Sparkles,
   Trash2,
+  X,
   XCircle
 } from "lucide-react";
 import type { FormEvent, ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
+import { resolveEventRecordInput, resolveEventRecordInputWithAi } from "@/lib/event-recording";
+import type { AiEventParseResult } from "@/lib/event-recording";
 import { initialState } from "@/lib/seed-data";
-import { activeEvents, activeReminders, sortEventsByTime, sortRemindersByTime } from "@/lib/stats";
+import { activeEvents, sortEventsByTime } from "@/lib/stats";
 import {
-  addDays,
-  dateAtLocalHour,
   dayKey,
-  formatDayLabel,
   formatMessageTime,
-  formatShortDate,
   formatTime,
   todayLabel
 } from "@/lib/time";
-import type { AppView, CalendarEvent, ConversationMessage, Reminder, TimelyState } from "@/lib/types";
+import type { AppView, CalendarEvent, ConversationMessage, TimelyState } from "@/lib/types";
 
-const STORAGE_KEY = "timely-mobile-state-v1";
+const STORAGE_KEY = "timely-event-record-state-v1";
 
 const viewLabels: Record<AppView, string> = {
   chat: "对话",
-  calendar: "日历",
-  reminders: "提醒",
+  calendar: "记录",
   settings: "设置"
 };
+
+const weekLabels = ["日", "一", "二", "三", "四", "五", "六"];
+const dayMs = 24 * 60 * 60 * 1000;
 
 export function TimelyApp() {
   const [state, setState, isReady] = useLocalStorageState<TimelyState>(STORAGE_KEY, initialState);
   const [view, setView] = useState<AppView>("chat");
   const [draft, setDraft] = useState("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const visibleEvents = useMemo(() => sortEventsByTime(activeEvents(state.events)), [state.events]);
-  const visibleReminders = useMemo(
-    () => sortRemindersByTime(state.reminders.filter((reminder) => reminder.status !== "cancelled")),
-    [state.reminders]
-  );
-  const activeReminderCount = activeReminders(state.reminders).length;
 
-  function submitMessage(event: FormEvent<HTMLFormElement>) {
+  async function submitMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const text = draft.trim();
-    if (!text) {
+    if (!text || isSubmitting) {
       return;
     }
 
-    setState((current) => resolveLocalInput(current, text));
     setDraft("");
+    setIsVoiceMode(false);
+    setIsSubmitting(true);
+
+    try {
+      const aiResult = await requestAiEventParse(text);
+      setState((current) => resolveEventRecordInputWithAi(current, text, aiResult));
+    } catch {
+      setState((current) => resolveEventRecordInput(current, text));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function requestAiEventParse(input: string): Promise<AiEventParseResult> {
+    const response = await fetch("/api/record-event", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ input })
+    });
+
+    if (!response.ok) {
+      throw new Error("AI event parsing failed");
+    }
+
+    const data = (await response.json()) as { result?: unknown };
+    if (!isAiEventParseResult(data.result)) {
+      throw new Error("AI event parsing returned invalid result");
+    }
+
+    return data.result;
   }
 
   function resetDemoData() {
     setState(initialState);
     setDraft("");
+  }
+
+  function clearChatHistory() {
+    setState((current) => ({
+      ...current,
+      messages: [],
+      pendingClarification: null
+    }));
+    setDraft("");
+    setIsVoiceMode(false);
   }
 
   function cancelEvent(eventId: string) {
@@ -81,70 +120,84 @@ export function TimelyApp() {
     }));
   }
 
-  function toggleReminder(reminderId: string) {
-    setState((current) => ({
-      ...current,
-      reminders: current.reminders.map((reminder) =>
-        reminder.id === reminderId
-          ? {
-              ...reminder,
-              status: reminder.status === "done" ? "active" : "done",
-              updatedAt: new Date().toISOString()
-            }
-          : reminder
-      )
-    }));
-  }
-
-  function cancelReminder(reminderId: string) {
-    setState((current) => ({
-      ...current,
-      reminders: current.reminders.map((reminder) =>
-        reminder.id === reminderId
-          ? { ...reminder, status: "cancelled", updatedAt: new Date().toISOString() }
-          : reminder
-      )
-    }));
+  function selectView(nextView: AppView) {
+    setView(nextView);
+    setIsMenuOpen(false);
   }
 
   return (
     <main className="app-stage">
       <section className="phone-shell" aria-label="Timely mobile client">
         <header className="app-header">
-          <div>
+          <button
+            className="menu-trigger"
+            type="button"
+            aria-controls="timely-drawer"
+            aria-expanded={isMenuOpen}
+            aria-label="打开菜单"
+            onClick={() => setIsMenuOpen(true)}
+          >
+            <Menu size={26} />
+          </button>
+          <div className="app-title">
             <p className="today-text">{todayLabel()}</p>
             <h1>Timely</h1>
           </div>
-          <div className="sync-badge">
-            <Smartphone size={14} />
-            <span>{isReady ? "本机" : "准备中"}</span>
-          </div>
+          <button
+            className="clear-chat-button"
+            type="button"
+            title="清空聊天记录"
+            aria-label="清空聊天记录"
+            disabled={!isReady || (state.messages.length === 0 && !state.pendingClarification)}
+            onClick={clearChatHistory}
+          >
+            <Trash2 size={18} />
+          </button>
         </header>
+
+        <div
+          className={`drawer-backdrop ${isMenuOpen ? "open" : ""}`}
+          aria-hidden={!isMenuOpen}
+          onClick={() => setIsMenuOpen(false)}
+        />
+        <aside className={`side-drawer ${isMenuOpen ? "open" : ""}`} id="timely-drawer" aria-label="主菜单">
+          <div className="drawer-head">
+            <div>
+              <p className="eyebrow">Menu</p>
+              <h2>Timely</h2>
+            </div>
+            <button className="drawer-close" type="button" aria-label="关闭菜单" onClick={() => setIsMenuOpen(false)}>
+              <X size={20} />
+            </button>
+          </div>
+          <nav className="drawer-nav" aria-label="切换页面">
+            <NavButton icon={<MessageCircle size={20} />} view="chat" activeView={view} onClick={selectView} />
+            <NavButton icon={<CalendarDays size={20} />} view="calendar" activeView={view} onClick={selectView} />
+            <NavButton icon={<Settings size={20} />} view="settings" activeView={view} onClick={selectView} />
+          </nav>
+        </aside>
 
         <section className="content-area">
           {view === "chat" && (
-            <ChatView messages={state.messages} draft={draft} setDraft={setDraft} onSubmit={submitMessage} />
+            <ChatView
+              messages={state.messages}
+              draft={draft}
+              setDraft={setDraft}
+              isVoiceMode={isVoiceMode}
+              isSubmitting={isSubmitting}
+              onToggleVoice={() => setIsVoiceMode((value) => !value)}
+              onSubmit={submitMessage}
+            />
           )}
           {view === "calendar" && <CalendarView events={visibleEvents} onCancel={cancelEvent} />}
-          {view === "reminders" && (
-            <ReminderView reminders={visibleReminders} onToggle={toggleReminder} onCancel={cancelReminder} />
-          )}
           {view === "settings" && (
             <SettingsView
               eventCount={visibleEvents.length}
-              reminderCount={activeReminderCount}
               hasPendingClarification={Boolean(state.pendingClarification)}
               onReset={resetDemoData}
             />
           )}
         </section>
-
-        <nav className="bottom-nav" aria-label="Timely sections">
-          <NavButton icon={<MessageCircle size={20} />} view="chat" activeView={view} onClick={setView} />
-          <NavButton icon={<CalendarDays size={20} />} view="calendar" activeView={view} onClick={setView} />
-          <NavButton icon={<Bell size={20} />} view="reminders" activeView={view} onClick={setView} />
-          <NavButton icon={<Settings size={20} />} view="settings" activeView={view} onClick={setView} />
-        </nav>
       </section>
     </main>
   );
@@ -154,134 +207,288 @@ function ChatView({
   messages,
   draft,
   setDraft,
+  isVoiceMode,
+  isSubmitting,
+  onToggleVoice,
   onSubmit
 }: {
   messages: ConversationMessage[];
   draft: string;
   setDraft: (value: string) => void;
+  isVoiceMode: boolean;
+  isSubmitting: boolean;
+  onToggleVoice: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
+  const hasConversation = messages.some((message) => message.role === "user");
+
   return (
     <div className="view-stack chat-view">
-      <div className="section-head">
-        <div>
-          <p className="eyebrow">Agent</p>
-          <h2>对话记录</h2>
+      {hasConversation ? (
+        <div className="message-list" aria-live="polite">
+          {messages.map((message) => (
+            <article className={`message-bubble ${message.role}`} key={message.id}>
+              <p>{message.content}</p>
+              <time>{formatMessageTime(message.createdAt)}</time>
+            </article>
+          ))}
         </div>
-        <span className="count-pill">{messages.length}</span>
-      </div>
-
-      <div className="message-list" aria-live="polite">
-        {messages.map((message) => (
-          <article className={`message-bubble ${message.role}`} key={message.id}>
-            <p>{message.content}</p>
-            <time>{formatMessageTime(message.createdAt)}</time>
-          </article>
-        ))}
-      </div>
+      ) : (
+        <section className="home-prompt" aria-label="Timely welcome">
+          <Sparkles className="prompt-spark" size={38} />
+          <h2>想记录什么，尽管说吧！</h2>
+        </section>
+      )}
 
       <form className="composer" onSubmit={onSubmit}>
         <input
           aria-label="输入要记录的内容"
-          placeholder="说点什么..."
+          placeholder={isSubmitting ? "正在记录..." : isVoiceMode ? "正在听..." : "记录某个时间点发生的事..."}
           value={draft}
+          disabled={isSubmitting}
           onChange={(event) => setDraft(event.target.value)}
         />
-        <button type="submit" title="发送">
-          <Send size={18} />
+        <button
+          className="voice-action"
+          type="button"
+          title="语音输入"
+          aria-label="语音输入"
+          aria-pressed={isVoiceMode}
+          disabled={isSubmitting}
+          onClick={onToggleVoice}
+        >
+          <Mic size={22} />
         </button>
       </form>
     </div>
   );
 }
 
-function CalendarView({ events, onCancel }: { events: CalendarEvent[]; onCancel: (eventId: string) => void }) {
-  const groupedEvents = groupEvents(events);
+function isAiEventParseResult(value: unknown): value is AiEventParseResult {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
 
+  const result = value as Partial<AiEventParseResult>;
   return (
-    <div className="view-stack">
-      <div className="section-head">
-        <div>
-          <p className="eyebrow">Calendar</p>
-          <h2>内部日历</h2>
-        </div>
-        <span className="count-pill">{events.length}</span>
-      </div>
-
-      {groupedEvents.length === 0 ? (
-        <EmptyState icon={<CalendarDays size={24} />} title="暂无记录" />
-      ) : (
-        <div className="day-list">
-          {groupedEvents.map(([key, dayEvents]) => (
-            <section className="day-group" key={key}>
-              <h3>{formatDayLabel(dayEvents[0].startsAt)}</h3>
-              <div className="record-list">
-                {dayEvents.map((event) => (
-                  <article className="record-row" key={event.id}>
-                    <div className="time-chip">{formatTime(event.startsAt)}</div>
-                    <div className="record-body">
-                      <h4>{event.title}</h4>
-                      <p>{event.location ?? event.notes ?? "已保存到 Timely"}</p>
-                    </div>
-                    <button className="icon-action danger" type="button" title="取消记录" onClick={() => onCancel(event.id)}>
-                      <XCircle size={18} />
-                    </button>
-                  </article>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
-    </div>
+    result.intent === "create_event" ||
+    result.intent === "delete_event" ||
+    result.intent === "needs_clarification" ||
+    result.intent === "unsupported"
   );
 }
 
-function ReminderView({
-  reminders,
-  onToggle,
-  onCancel
-}: {
-  reminders: Reminder[];
-  onToggle: (reminderId: string) => void;
-  onCancel: (reminderId: string) => void;
-}) {
-  return (
-    <div className="view-stack">
-      <div className="section-head">
-        <div>
-          <p className="eyebrow">Reminder</p>
-          <h2>提醒</h2>
-        </div>
-        <span className="count-pill">{reminders.length}</span>
-      </div>
+function CalendarView({ events, onCancel }: { events: CalendarEvent[]; onCancel: (eventId: string) => void }) {
+  const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
+  const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
+  const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const currentMonthRef = useRef<HTMLElement | null>(null);
+  const scrollMonths = useMemo(() => buildScrollableMonths(monthDate), [monthDate]);
+  const pickerYears = useMemo(() => buildPickerYears(monthDate.getFullYear()), [monthDate]);
+  const selectedDate = selectedDayKey ? dateFromDayKey(selectedDayKey) : null;
+  const selectedEvents = useMemo(
+    () => (selectedDayKey ? sortEventsByTime(events.filter((event) => dayKey(event.startsAt) === selectedDayKey)) : []),
+    [events, selectedDayKey]
+  );
+  const selectedWeekDays = useMemo(
+    () => (selectedDate ? buildWeekDays(selectedDate, events) : []),
+    [events, selectedDate]
+  );
 
-      {reminders.length === 0 ? (
-        <EmptyState icon={<Bell size={24} />} title="暂无提醒" />
-      ) : (
-        <div className="record-list">
-          {reminders.map((reminder) => (
-            <article className={`reminder-row ${reminder.status}`} key={reminder.id}>
+  useEffect(() => {
+    if (!selectedDayKey) {
+      currentMonthRef.current?.scrollIntoView({ block: "start" });
+    }
+  }, [monthDate, selectedDayKey]);
+
+  function jumpToday() {
+    const today = new Date();
+    setMonthDate(startOfMonth(today));
+    setSelectedDayKey(toLocalDayKey(today));
+  }
+
+  function chooseYear(year: number) {
+    setMonthDate((current) => startOfMonth(new Date(year, current.getMonth(), 1)));
+    setIsYearPickerOpen(false);
+  }
+
+  function chooseMonth(monthIndex: number) {
+    setMonthDate((current) => startOfMonth(new Date(current.getFullYear(), monthIndex, 1)));
+    setIsMonthPickerOpen(false);
+  }
+
+  function openDay(date: Date, key: string) {
+    setMonthDate(startOfMonth(date));
+    setSelectedDayKey(key);
+  }
+
+  return (
+    <div className="view-stack calendar-view">
+      {selectedDayKey && selectedDate ? (
+        <section className="day-detail" aria-label="单日事件记录">
+          <div className="calendar-toolbar">
+            <button className="calendar-pill" type="button" onClick={() => setSelectedDayKey(null)}>
+              <ChevronLeft size={22} />
+              {monthDate.getMonth() + 1}月
+            </button>
+            <button className="calendar-pill compact" type="button" onClick={jumpToday}>
+              今天
+            </button>
+          </div>
+
+          <div className="week-strip" aria-label="选择本周日期">
+            {selectedWeekDays.map((day) => (
               <button
-                className="check-action"
+                className={`week-day ${day.key === selectedDayKey ? "selected" : ""} ${day.events.length ? "has-events" : ""}`}
                 type="button"
-                title={reminder.status === "done" ? "标为未完成" : "标为完成"}
-                onClick={() => onToggle(reminder.id)}
+                key={day.key}
+                onClick={() => setSelectedDayKey(day.key)}
               >
-                {reminder.status === "done" ? <CheckCircle2 size={20} /> : <BellRing size={20} />}
+                <span>{weekLabels[day.date.getDay()]}</span>
+                <strong>{day.date.getDate()}</strong>
               </button>
-              <div className="record-body">
-                <h4>{reminder.title}</h4>
-                <p>
-                  {formatShortDate(reminder.remindAt)} {formatTime(reminder.remindAt)}
-                </p>
-              </div>
-              <button className="icon-action danger" type="button" title="取消提醒" onClick={() => onCancel(reminder.id)}>
-                <Trash2 size={17} />
+            ))}
+          </div>
+
+          <div className="day-title">
+            <h2>{formatFullDay(selectedDate)}</h2>
+            <p>{selectedEvents.length ? `${selectedEvents.length} 条记录` : "这天暂无记录"}</p>
+          </div>
+
+          <div className="timeline-grid" aria-label="单日时间轴">
+            {Array.from({ length: 24 }, (_, hour) => {
+              const hourEvents = selectedEvents.filter((event) => new Date(event.startsAt).getHours() === hour);
+              return (
+                <section className="timeline-hour" key={hour}>
+                  <time>{String(hour).padStart(2, "0")}:00</time>
+                  <div className="timeline-lane">
+                    {hourEvents.map((event) => (
+                      <article className="timeline-event" key={event.id}>
+                        <div>
+                          <h3>{event.title}</h3>
+                          <p>
+                            {formatTime(event.startsAt)} - {formatTime(event.endsAt ?? addHoursIso(event.startsAt, 1))}
+                          </p>
+                        </div>
+                        <button
+                          className="icon-action danger"
+                          type="button"
+                          title="取消记录"
+                          onClick={() => onCancel(event.id)}
+                        >
+                          <XCircle size={17} />
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        </section>
+      ) : (
+        <section className="calendar-month" aria-label="月历记录概览">
+          <div className="calendar-toolbar">
+            <div className="calendar-picker-wrap">
+              <button
+                className="year-select"
+                type="button"
+                aria-expanded={isYearPickerOpen}
+                onClick={() => {
+                  setIsYearPickerOpen((value) => !value);
+                  setIsMonthPickerOpen(false);
+                }}
+              >
+                {monthDate.getFullYear()}年
               </button>
-            </article>
-          ))}
-        </div>
+              {isYearPickerOpen && (
+                <div className="calendar-picker year-picker">
+                  {pickerYears.map((year) => (
+                    <button
+                      className={year === monthDate.getFullYear() ? "selected" : ""}
+                      type="button"
+                      key={year}
+                      onClick={() => chooseYear(year)}
+                    >
+                      {year}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button className="calendar-pill compact" type="button" onClick={jumpToday}>
+              今天
+            </button>
+          </div>
+
+          <div className="month-heading">
+            <div className="calendar-picker-wrap month-picker-wrap">
+              <button
+                className="month-select"
+                type="button"
+                aria-expanded={isMonthPickerOpen}
+                onClick={() => {
+                  setIsMonthPickerOpen((value) => !value);
+                  setIsYearPickerOpen(false);
+                }}
+              >
+                {monthDate.getMonth() + 1}月
+              </button>
+              {isMonthPickerOpen && (
+                <div className="calendar-picker month-picker">
+                  {Array.from({ length: 12 }, (_, index) => (
+                    <button
+                      className={index === monthDate.getMonth() ? "selected" : ""}
+                      type="button"
+                      key={index}
+                      onClick={() => chooseMonth(index)}
+                    >
+                      {index + 1}月
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="calendar-scroll" aria-label="上下滑动浏览月份">
+            {scrollMonths.map((scrollMonth) => {
+              const calendarDays = buildMonthDays(scrollMonth, events);
+              const isFocusedMonth = scrollMonth.getTime() === monthDate.getTime();
+              return (
+                <section
+                  className="calendar-month-section"
+                  key={`${scrollMonth.getFullYear()}-${scrollMonth.getMonth()}`}
+                  ref={isFocusedMonth ? currentMonthRef : undefined}
+                >
+                  <h3>{scrollMonth.getFullYear()}年 {scrollMonth.getMonth() + 1}月</h3>
+                  <div className="weekday-row" aria-hidden="true">
+                    {weekLabels.map((label) => (
+                      <span key={label}>{label}</span>
+                    ))}
+                  </div>
+                  <div className="month-grid">
+                    {calendarDays.map((day) => (
+                      <button
+                        className={`month-day ${day.isCurrentMonth ? "" : "muted"} ${day.isToday ? "today" : ""} ${
+                          day.events.length ? "has-events" : ""
+                        }`}
+                        type="button"
+                        key={day.key}
+                        onClick={() => openDay(day.date, day.key)}
+                      >
+                        <strong>{day.date.getDate()}</strong>
+                        <span>{day.events.length ? `${day.events.length}条` : ""}</span>
+                        {day.events.length > 0 && <i aria-hidden="true" />}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        </section>
       )}
     </div>
   );
@@ -289,12 +496,10 @@ function ReminderView({
 
 function SettingsView({
   eventCount,
-  reminderCount,
   hasPendingClarification,
   onReset
 }: {
   eventCount: number;
-  reminderCount: number;
   hasPendingClarification: boolean;
   onReset: () => void;
 }) {
@@ -311,10 +516,8 @@ function SettingsView({
       <div className="settings-list">
         <article className="settings-row">
           <div>
-            <h3>本地记录</h3>
-            <p>
-              {eventCount} 个日历事件，{reminderCount} 个待提醒
-            </p>
+            <h3>本地事件</h3>
+            <p>{eventCount} 个事件记录</p>
           </div>
           <Clock3 size={19} />
         </article>
@@ -327,16 +530,16 @@ function SettingsView({
         </article>
         <article className="settings-row">
           <div>
-            <h3>通知权限</h3>
-            <p>后续创建提醒时请求</p>
+            <h3>记录范围</h3>
+            <p>支持过去或未来的明确时间点</p>
           </div>
-          <Bell size={19} />
+          <CalendarDays size={19} />
         </article>
       </div>
 
       <button className="reset-button" type="button" onClick={onReset}>
         <RefreshCcw size={17} />
-        重置示例数据
+        重置示例记录
       </button>
     </div>
   );
@@ -372,186 +575,76 @@ function EmptyState({ icon, title }: { icon: ReactNode; title: string }) {
   );
 }
 
-function resolveLocalInput(current: TimelyState, input: string): TimelyState {
-  const createdAt = new Date().toISOString();
-  const userMessage = createMessage("user", input, createdAt);
+function buildMonthDays(monthDate: Date, events: CalendarEvent[]) {
+  const monthStart = startOfMonth(monthDate);
+  const gridStart = new Date(monthStart);
+  gridStart.setDate(monthStart.getDate() - monthStart.getDay());
+  const todayKey = toLocalDayKey(new Date());
 
-  if (current.pendingClarification) {
-    if (!hasMeetingTime(input)) {
-      return {
-        ...current,
-        messages: [...current.messages, userMessage, createMessage("assistant", "什么时候？", createdAt)]
-      };
-    }
-
-    const event = buildMeetingEvent(current.pendingClarification.sourceText, current.pendingClarification.title);
-
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart.getTime() + index * dayMs);
+    const key = toLocalDayKey(date);
     return {
-      ...current,
-      pendingClarification: null,
-      events: [event, ...current.events],
-      messages: [
-        ...current.messages,
-        userMessage,
-        createMessage("assistant", `已记录。${formatShortDate(event.startsAt)}下午3点，${event.title}。`, createdAt)
-      ]
+      date,
+      key,
+      isCurrentMonth: date.getMonth() === monthDate.getMonth(),
+      isToday: key === todayKey,
+      events: events.filter((event) => dayKey(event.startsAt) === key)
     };
-  }
+  });
+}
 
-  if (/最近怎么样/.test(input)) {
-    return appendAssistant(current, userMessage, "我可以帮你记录日程或提醒。", createdAt);
-  }
+function buildWeekDays(selectedDate: Date, events: CalendarEvent[]) {
+  const weekStart = new Date(selectedDate);
+  weekStart.setDate(selectedDate.getDate() - selectedDate.getDay());
 
-  if (isIncompleteMeeting(input)) {
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(weekStart.getTime() + index * dayMs);
+    const key = toLocalDayKey(date);
     return {
-      ...current,
-      pendingClarification: {
-        kind: "event_time",
-        title: "会议",
-        sourceText: input,
-        createdAt
-      },
-      messages: [...current.messages, userMessage, createMessage("assistant", "什么时候？", createdAt)]
+      date,
+      key,
+      events: events.filter((event) => dayKey(event.startsAt) === key)
     };
-  }
-
-  if (isMeetingRecord(input)) {
-    const event = buildMeetingEvent(input, "会议");
-    const reminder = /提前半小时/.test(input) ? buildEventReminder(event, input) : null;
-
-    return {
-      ...current,
-      events: [event, ...current.events],
-      reminders: reminder ? [reminder, ...current.reminders] : current.reminders,
-      messages: [
-        ...current.messages,
-        userMessage,
-        createMessage(
-          "assistant",
-          reminder ? "已记录。6月13日下午3点，会议；提前半小时提醒。" : "已记录。6月13日下午3点，会议。",
-          createdAt
-        )
-      ]
-    };
-  }
-
-  if (isParcelReminder(input)) {
-    const reminder = buildParcelReminder(input);
-
-    return {
-      ...current,
-      reminders: [reminder, ...current.reminders],
-      messages: [
-        ...current.messages,
-        userMessage,
-        createMessage("assistant", "已提醒。明天下午3点，取快递。", createdAt)
-      ]
-    };
-  }
-
-  return appendAssistant(current, userMessage, "我可以帮你记录日程或提醒。", createdAt);
+  });
 }
 
-function appendAssistant(current: TimelyState, userMessage: ConversationMessage, reply: string, createdAt: string) {
-  return {
-    ...current,
-    messages: [...current.messages, userMessage, createMessage("assistant", reply, createdAt)]
-  };
+function buildScrollableMonths(monthDate: Date) {
+  return Array.from({ length: 13 }, (_, index) => addMonths(monthDate, index - 6));
 }
 
-function createMessage(role: "user" | "assistant", content: string, createdAt = new Date().toISOString()) {
-  return {
-    id: makeId("message"),
-    role,
-    content,
-    createdAt
-  };
+function buildPickerYears(year: number) {
+  return Array.from({ length: 11 }, (_, index) => year - 5 + index);
 }
 
-function isIncompleteMeeting(input: string) {
-  return /会议/.test(input) && /记录/.test(input) && !hasMeetingTime(input);
+function startOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-function isMeetingRecord(input: string) {
-  return /会议/.test(input) && hasMeetingTime(input);
+function addMonths(date: Date, delta: number) {
+  return new Date(date.getFullYear(), date.getMonth() + delta, 1);
 }
 
-function isParcelReminder(input: string) {
-  return /提醒/.test(input) && /取快递/.test(input) && /明天/.test(input);
+function toLocalDayKey(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
-function hasMeetingTime(input: string) {
-  return /6月13/.test(input) && /(下午3点|3点|15点|15:00|15：00)/.test(input);
+function dateFromDayKey(key: string) {
+  const [year, month, day] = key.split("-").map(Number);
+  return new Date(year, month - 1, day);
 }
 
-function buildMeetingEvent(sourceText: string, title: string): CalendarEvent {
-  const now = new Date().toISOString();
-  const year = new Date().getFullYear();
-  const startsAt = new Date(year, 5, 13, 15, 0, 0).toISOString();
-
-  return {
-    id: makeId("event"),
-    title,
-    startsAt,
-    endsAt: null,
-    location: null,
-    notes: null,
-    status: "active",
-    sourceText,
-    createdAt: now,
-    updatedAt: now
-  };
+function formatFullDay(date: Date) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long"
+  }).format(date);
 }
 
-function buildEventReminder(event: CalendarEvent, sourceText: string): Reminder {
-  const startsAt = new Date(event.startsAt);
-  startsAt.setMinutes(startsAt.getMinutes() - 30);
-  const now = new Date().toISOString();
-
-  return {
-    id: makeId("reminder"),
-    title: `${event.title}提醒`,
-    remindAt: startsAt.toISOString(),
-    relatedEventId: event.id,
-    status: "active",
-    sourceText,
-    createdAt: now,
-    updatedAt: now,
-    notifiedAt: null
-  };
-}
-
-function buildParcelReminder(sourceText: string): Reminder {
-  const tomorrow = addDays(new Date(), 1);
-  const now = new Date().toISOString();
-
-  return {
-    id: makeId("reminder"),
-    title: "取快递",
-    remindAt: dateAtLocalHour(tomorrow, 15),
-    relatedEventId: null,
-    status: "active",
-    sourceText,
-    createdAt: now,
-    updatedAt: now,
-    notifiedAt: null
-  };
-}
-
-function groupEvents(events: CalendarEvent[]) {
-  const groups = events.reduce<Record<string, CalendarEvent[]>>((result, event) => {
-    const key = dayKey(event.startsAt);
-    result[key] = [...(result[key] ?? []), event];
-    return result;
-  }, {});
-
-  return Object.entries(groups);
-}
-
-function makeId(prefix: string) {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return `${prefix}-${crypto.randomUUID()}`;
-  }
-
-  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+function addHoursIso(iso: string, hours: number) {
+  return new Date(new Date(iso).getTime() + hours * 60 * 60 * 1000).toISOString();
 }
