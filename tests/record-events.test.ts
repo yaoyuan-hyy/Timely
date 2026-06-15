@@ -256,6 +256,29 @@ function stateWithTwoTomorrowMeetings(): TimelyState {
 }
 
 {
+  const state = resolveEventRecordInput(emptyState(), "下个月六号我要去广州，六点的飞机", {
+    createId: deterministicIds(),
+    now: new Date("2026-06-16T02:37:00+08:00")
+  });
+
+  assert.equal(state.events.length, 1);
+  assert.equal(state.events[0].title, "去广州");
+  assert.equal(state.events[0].startsAt, "2026-07-06T06:00:00+08:00");
+  assert.equal(state.messages.at(-1)?.content, "已记录。7月6日 06:00，去广州。");
+}
+
+{
+  const state = resolveEventRecordInput(emptyState(), "下月6号我要去广州，6点的飞机", {
+    createId: deterministicIds(),
+    now: new Date("2026-06-16T02:37:00+08:00")
+  });
+
+  assert.equal(state.events.length, 1);
+  assert.equal(state.events[0].title, "去广州");
+  assert.equal(state.events[0].startsAt, "2026-07-06T06:00:00+08:00");
+}
+
+{
   const state = resolveEventRecordInputWithAi(
     emptyState(),
     "我明天下午五点要健身",

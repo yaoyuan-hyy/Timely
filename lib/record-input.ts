@@ -5,7 +5,7 @@ import {
   resolveLedgerRecordInput,
   resolveLedgerRecordInputWithAi
 } from "./ledger-recording";
-import type { AiLedgerParseResult } from "./ledger-recording";
+import type { AiLedgerClarificationParseResult, AiLedgerParseResult } from "./ledger-recording";
 import { createLocalId } from "./local-id";
 import { toShanghaiIso } from "./time";
 import type { ConversationMessage, PendingClarification, TimelyState } from "./types";
@@ -16,7 +16,7 @@ type ResolveOptions = {
   pendingClarificationTtlMs?: number;
 };
 
-export type AiRecordParseResult = AiEventParseResult | AiLedgerParseResult;
+export type AiRecordParseResult = AiEventParseResult | AiLedgerParseResult | AiLedgerClarificationParseResult;
 
 export const PENDING_CLARIFICATION_TTL_MS = 5 * 60 * 1000;
 
@@ -77,7 +77,18 @@ function resolveFreshRecordInputWithAi(
     return resolveLedgerRecordInputWithAi(current, input, result, options);
   }
 
+  if (isLedgerClarificationResult(result)) {
+    return resolveLedgerRecordInput(current, input, options);
+  }
+
   return resolveEventRecordInputWithAi(current, input, result, options);
+}
+
+function isLedgerClarificationResult(result: AiRecordParseResult): result is AiLedgerClarificationParseResult {
+  return (
+    result.intent === "needs_clarification" &&
+    (result.clarificationQuestion === "金额是多少？" || result.clarificationQuestion === "这是收入还是支出？")
+  );
 }
 
 function preparePendingClarification(

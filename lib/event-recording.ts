@@ -429,6 +429,17 @@ function parseDate(text: string, now: Date): DateParts | null {
     return parseWeekdayDate(current, weekday[1], weekday[2]);
   }
 
+  const relativeMonthDay = text.match(/(上个月|上月|这个月|本月|下个月|下月)([零〇一二两三四五六七八九十]{1,3}|\d{1,2})[日号]/);
+
+  if (relativeMonthDay) {
+    const day = parseNumberText(relativeMonthDay[2]);
+    if (day === null) {
+      return null;
+    }
+
+    return shiftMonthDate(current, relativeMonthOffset(relativeMonthDay[1]), day);
+  }
+
   if (/今天/.test(text)) {
     return current;
   }
@@ -539,11 +550,14 @@ function extractTitle(text: string) {
   return text
     .replace(/\d{4}年\s*\d{1,2}月\s*\d{1,2}[日号]?/g, "")
     .replace(/(?:今年|明年|去年)?\d{1,2}月\s*\d{1,2}[日号]?/g, "")
+    .replace(/(?:上个月|上月|这个月|本月|下个月|下月)(?:[零〇一二两三四五六七八九十]{1,3}|\d{1,2})[日号]/g, "")
     .replace(/(上|下|这|本)?(?:周|星期|礼拜)[日天一二三四五六]/g, "")
     .replace(/今天|明天|昨天/g, "")
     .replace(/(?:上午|早上|下午|晚上|傍晚|中午)?\d{1,2}[:：][0-5]\d/g, "")
     .replace(/(?:上午|早上|下午|晚上|傍晚|中午)?\d{1,2}点(?:半|\d{1,2}分?)?/g, "")
     .replace(/(?:上午|早上|下午|晚上|傍晚|中午)?[零〇一二两三四五六七八九十]{1,3}点(?:半|[零〇一二两三四五六七八九十]{1,3}分?)?/g, "")
+    .replace(/^(我想|我要|我需要|需要|要)/g, "")
+    .replace(/[，。,.、；;：:\s]?的?(飞机|航班|高铁|火车|车票|机票)$/g, "")
     .replace(/^(请|麻烦)?(帮我|给我)?(记录一下|记录|记一下|记一笔|记|新增|添加|加一个|加个|加)(一下)?/g, "")
     .replace(/^(我想|我要|需要|要)?(记录一下|记录|记一下|记一笔|记|新增|添加|加一个|加个|加)(一下)?/g, "")
     .replace(/^(有一个|有个|有一场|有一次|一个|一场|一次|有)/g, "")
@@ -573,7 +587,7 @@ function isLikelyEventRecord(text: string) {
     return false;
   }
 
-  return /(记录|记一下|记一笔|新增|添加|会议|开会|日程|事情|事项|有个|有一个|有一场|有一次)/.test(text);
+  return /(记录|记一下|记一笔|新增|添加|会议|开会|日程|事情|事项|有个|有一个|有一场|有一次|我要去|要去|去.+?(?:飞机|航班|高铁|火车|车票|机票)|飞机|航班|高铁|火车)/.test(text);
 }
 
 function isDeleteRequest(text: string) {
@@ -703,6 +717,36 @@ function parseWeekdayDate(current: DateParts, modifier: string | undefined, week
   }
 
   return addDays(current, delta);
+}
+
+function parseNumberText(text: string) {
+  if (/^\d{1,2}$/.test(text)) {
+    return Number(text);
+  }
+
+  return parseChineseNumber(text);
+}
+
+function relativeMonthOffset(text: string) {
+  if (/上/.test(text)) {
+    return -1;
+  }
+
+  if (/下/.test(text)) {
+    return 1;
+  }
+
+  return 0;
+}
+
+function shiftMonthDate(current: DateParts, monthOffset: number, day: number): DateParts {
+  const date = new Date(Date.UTC(current.year, current.month - 1 + monthOffset, 1));
+
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day
+  };
 }
 
 function weekdayIndex(text: string) {

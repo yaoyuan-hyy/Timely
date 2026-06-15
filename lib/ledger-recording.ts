@@ -28,6 +28,11 @@ export type AiLedgerParseResult = {
   clarificationQuestion: "金额是多少？" | "这是收入还是支出？" | null;
 };
 
+export type AiLedgerClarificationParseResult = Omit<AiLedgerParseResult, "intent" | "clarificationQuestion"> & {
+  intent: "needs_clarification";
+  clarificationQuestion: "金额是多少？" | "这是收入还是支出？";
+};
+
 export function resolveLedgerRecordInput(
   current: TimelyState,
   input: string,

@@ -123,7 +123,15 @@ export async function parseMiniMaxRecordInput(
     throw new Error("MiniMax API response did not include message content");
   }
 
+  logMiniMaxRawContent(content);
+
   return normalizeMiniMaxRecordResult(JSON.parse(extractMiniMaxJsonContent(content)));
+}
+
+function logMiniMaxRawContent(content: string) {
+  if (process.env.NODE_ENV !== "production") {
+    console.log("【MiniMax 原始返回】:", content);
+  }
 }
 
 function buildMiniMaxRequest(input: string, now: Date) {
@@ -134,12 +142,22 @@ function buildMiniMaxRequest(input: string, now: Date) {
       {
         role: "system",
         content: [
-          "你是 Timely 的自然语言记录解析器，只把用户输入解析成 JSON。",
-          "Timely 可以记录事件，也可以记录记账流水；不要创建提醒、规划或任务。",
-          "默认时区是 Asia/Shanghai。",
-          "事件仍使用 create_event 或 delete_event，规则与 Timely 事件记录解析器一致。",
+          "你是 Timely 的语义审阅与结构化记录解析器。",
+          "不要按关键词或正则猜测；你必须先理解用户真正想记录的对象、时间、金额和上下文，再整理成符合 schema 的 JSON。",
+          "只输出符合 schema 的 JSON；不要输出解释、Markdown 或额外字段。",
+          "Timely 可以记录两类内容：事件和记账流水；不要创建提醒、规划或任务。",
+          "默认时区是 Asia/Shanghai，所有日期时间都要输出为 Asia/Shanghai ISO datetime。",
+          "先判断用户真实意图：要做、要去、要参加、删除某个日程 => 事件；花了、买了、收入、报销、工资、转账等资金变动 => 流水；无法归类 => unsupported。",
+          "事件创建使用 create_event，事件删除使用 delete_event；缺失关键信息时使用 needs_clarification。",
+          "事件 title 必须是用户真正要记录或删除的事项名，不要把自然语言原句直接塞进 title。",
+          "出行表达也是事件，例如“我要去广州，六点的飞机”应返回 create_event，title=去广州，notes=飞机。",
+          "“下个月六号”“下月6号”“这个月二十号”这类相对月份日期必须结合当前时间换算成具体 Asia/Shanghai 日期。",
+          "事件缺少时间时 clarificationQuestion 必须是“什么时候？”。",
+          "事件缺少事项名时 clarificationQuestion 必须是“记录什么？”。",
           "流水使用 create_ledger。",
           "流水 direction 只能是 expense 或 income。",
+          "流水金额必须是用户语义上付出或收到的钱；不要把日期、时间、序号、数量、楼层等数字当成金额。",
+          "即使用户没有说明货币单位（如元、块），只要语境是花费或收入（如‘花了我600’），也必须提取出数字作为金额，例如 600 返回 60000。",
           "流水 amountCents 是人民币分，例如 38 元返回 3800，26.5 元返回 2650。",
           "流水 currency 固定为 CNY。",
           "流水 category 使用简短中文分类，例如 餐饮、交通、工资、报销、购物；无法判断时用 未分类。",
@@ -148,6 +166,7 @@ function buildMiniMaxRequest(input: string, now: Date) {
           "如果用户说昨天、前天或明确日期，但没有具体几点，使用当前时间的时分。",
           "缺少流水金额时 clarificationQuestion 必须是“金额是多少？”。",
           "流水收支方向无法判断时 clarificationQuestion 必须是“这是收入还是支出？”。",
+          "例如“上个月7号买了个抽湿机”只有日期和购买对象，没有金额，必须返回 intent=needs_clarification,clarificationQuestion=金额是多少？。",
           "例如“今天午饭花了38”必须返回 intent=create_ledger,direction=expense,amountCents=3800,category=餐饮。",
           "例如“昨天打车26.5”必须返回 intent=create_ledger,direction=expense,amountCents=2650,category=交通。",
           "例如“收到工资12000”必须返回 intent=create_ledger,direction=income,amountCents=1200000,category=工资。",
@@ -204,6 +223,30 @@ function buildMiniMaxRequest(input: string, now: Date) {
       },
       {
         role: "user",
+        content: "当前时间：2026/06/16 02:37:00\n用户输入：下个月六号我要去广州，六点的飞机"
+      },
+      {
+        role: "assistant",
+        content: JSON.stringify({
+          intent: "create_event",
+          title: "去广州",
+          startsAt: "2026-07-06T06:00:00+08:00",
+          endsAt: null,
+          location: null,
+          notes: "飞机",
+          targetDate: null,
+          direction: null,
+          amountCents: null,
+          currency: null,
+          category: null,
+          occurredAt: null,
+          counterparty: null,
+          note: null,
+          clarificationQuestion: null
+        })
+      },
+      {
+        role: "user",
         content: `当前时间：${formatShanghaiContext(now)}\n用户输入：${input}`
       }
     ],
@@ -235,16 +278,32 @@ function normalizeMiniMaxRecordResult(value: unknown): AiRecordParseResult {
   const intent = value.intent;
 
   if (intent === "create_ledger") {
-    return {
-      intent,
-      direction: value.direction === "expense" || value.direction === "income" ? value.direction : null,
-      amountCents: normalizeAmountCents(value.amountCents),
-      currency: value.currency === "CNY" ? "CNY" : null,
+    const direction: "expense" | "income" | null =
+      value.direction === "expense" || value.direction === "income" ? value.direction : null;
+    const amountCents = normalizeAmountCents(value.amountCents);
+    const result = {
+      intent: "create_ledger" as const,
+      direction,
+      amountCents,
+      currency: value.currency === "CNY" ? ("CNY" as const) : null,
       category: nullableString(value.category),
       occurredAt: normalizeMiniMaxDateTime(value.occurredAt),
       counterparty: nullableString(value.counterparty),
       note: nullableString(value.note),
       clarificationQuestion: normalizeLedgerQuestion(value.clarificationQuestion)
+    };
+
+    if (amountCents === null) {
+      return {
+        ...result,
+        intent: "needs_clarification",
+        clarificationQuestion: "金额是多少？"
+      };
+    }
+
+    return {
+      ...result,
+      amountCents
     };
   }
 
@@ -283,7 +342,17 @@ function normalizeMiniMaxRecordResult(value: unknown): AiRecordParseResult {
 }
 
 function normalizeAmountCents(value: unknown) {
-  return typeof value === "number" && Number.isSafeInteger(value) && value > 0 ? value : null;
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    const amountCents = Math.round(value);
+    return Number.isSafeInteger(amountCents) && amountCents > 0 ? amountCents : null;
+  }
+
+  if (typeof value === "string") {
+    const amountCents = parseInt(value, 10);
+    return Number.isSafeInteger(amountCents) && amountCents > 0 ? amountCents : null;
+  }
+
+  return null;
 }
 
 function normalizeMiniMaxDate(value: unknown) {
@@ -416,7 +485,7 @@ function readJsonObjectAt(content: string, start: number) {
   return null;
 }
 
-function normalizeEventQuestion(value: unknown) {
+function normalizeEventQuestion(value: unknown): "什么时候？" | "记录什么？" | null {
   if (value === "什么时候？" || value === "记录什么？") {
     return value;
   }
@@ -424,7 +493,7 @@ function normalizeEventQuestion(value: unknown) {
   return null;
 }
 
-function normalizeLedgerQuestion(value: unknown) {
+function normalizeLedgerQuestion(value: unknown): "金额是多少？" | "这是收入还是支出？" | null {
   if (value === "金额是多少？" || value === "这是收入还是支出？") {
     return value;
   }

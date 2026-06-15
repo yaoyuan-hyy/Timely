@@ -46,6 +46,18 @@ const now = new Date("2026-06-15T12:10:00+08:00");
 }
 
 {
+  const state = resolveRecordInput(emptyState(), "下个月六号我要去广州，六点的飞机", {
+    createId: deterministicIds(),
+    now: new Date("2026-06-16T02:37:00+08:00")
+  });
+
+  assert.equal(state.ledgerEntries.length, 0);
+  assert.equal(state.events.length, 1);
+  assert.equal(state.events[0].title, "去广州");
+  assert.equal(state.events[0].startsAt, "2026-07-06T06:00:00+08:00");
+}
+
+{
   const aiResult: AiRecordParseResult = {
     intent: "create_ledger",
     direction: "expense",
@@ -66,6 +78,29 @@ const now = new Date("2026-06-15T12:10:00+08:00");
   assert.equal(state.ledgerEntries.length, 1);
   assert.equal(state.ledgerEntries[0].occurredAt, "2026-06-15T12:10:00+08:00");
   assert.equal(state.messages.at(-1)?.content, "已记录。支出 38.00 元，餐饮。");
+}
+
+{
+  const aiResult = {
+    intent: "needs_clarification",
+    direction: "expense",
+    amountCents: null,
+    currency: "CNY",
+    category: "交通",
+    occurredAt: null,
+    counterparty: null,
+    note: null,
+    clarificationQuestion: "金额是多少？"
+  } as unknown as AiRecordParseResult;
+  const state = resolveRecordInputWithAi(emptyState(), "机票花了我", aiResult, {
+    createId: deterministicIds(),
+    now
+  });
+
+  assert.equal(state.events.length, 0);
+  assert.equal(state.ledgerEntries.length, 0);
+  assert.equal(state.pendingClarification?.kind, "ledger_amount");
+  assert.equal(state.messages.at(-1)?.content, "金额是多少？");
 }
 
 {
