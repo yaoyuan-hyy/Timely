@@ -28,6 +28,7 @@ export const initialState: TimelyState = {
     }
   ],
   reminders: [],
+  ledgerEntries: [],
   messages: [
     {
       id: "message-demo-1",

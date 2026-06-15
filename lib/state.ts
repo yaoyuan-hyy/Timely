@@ -1,4 +1,4 @@
-import type { CalendarEvent, ConversationMessage, PendingClarification, Reminder, TimelyState } from "./types";
+import type { CalendarEvent, ConversationMessage, LedgerEntry, PendingClarification, Reminder, TimelyState } from "./types";
 
 export function normalizeTimelyState(value: unknown, fallback: TimelyState): TimelyState {
   const parsed = typeof value === "string" ? parseJson(value) : value;
@@ -9,6 +9,9 @@ export function normalizeTimelyState(value: unknown, fallback: TimelyState): Tim
   return {
     events: Array.isArray(parsed.events) ? parsed.events.map(normalizeEvent).filter(isCalendarEvent) : fallback.events,
     reminders: Array.isArray(parsed.reminders) ? parsed.reminders.map(normalizeReminder).filter(isReminder) : [],
+    ledgerEntries: Array.isArray(parsed.ledgerEntries)
+      ? parsed.ledgerEntries.map(normalizeLedgerEntry).filter(isLedgerEntry)
+      : [],
     messages: Array.isArray(parsed.messages)
       ? parsed.messages.map(normalizeMessage).filter(isConversationMessage)
       : fallback.messages,
@@ -65,6 +68,41 @@ function normalizeReminder(value: unknown): Reminder | null {
   };
 }
 
+function normalizeLedgerEntry(value: unknown): LedgerEntry | null {
+  const amountCents = isRecord(value) && typeof value.amountCents === "number" ? value.amountCents : null;
+
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    (value.direction !== "expense" && value.direction !== "income") ||
+    amountCents === null ||
+    !Number.isSafeInteger(amountCents) ||
+    amountCents < 0 ||
+    value.currency !== "CNY" ||
+    typeof value.category !== "string" ||
+    !value.category ||
+    typeof value.occurredAt !== "string"
+  ) {
+    return null;
+  }
+
+  const createdAt = stringOrEmpty(value.createdAt);
+
+  return {
+    id: value.id,
+    direction: value.direction,
+    amountCents,
+    currency: "CNY",
+    category: value.category,
+    occurredAt: value.occurredAt,
+    counterparty: nullableString(value.counterparty),
+    note: nullableString(value.note),
+    sourceText: stringOrEmpty(value.sourceText),
+    createdAt,
+    updatedAt: stringOrEmpty(value.updatedAt) || createdAt
+  };
+}
+
 function normalizeMessage(value: unknown): ConversationMessage | null {
   if (!isRecord(value) || typeof value.id !== "string" || typeof value.content !== "string") {
     return null;
@@ -88,7 +126,7 @@ function normalizePendingClarification(value: unknown): PendingClarification | n
       kind: "event_time",
       title: value.title,
       sourceText: stringOrEmpty(value.sourceText),
-      createdAt: stringOrEmpty(value.createdAt)
+      createdAt: timestampOrZero(value.createdAt)
     };
   }
 
@@ -98,7 +136,42 @@ function normalizePendingClarification(value: unknown): PendingClarification | n
       title: nullableString(value.title),
       targetDate: nullableString(value.targetDate),
       sourceText: stringOrEmpty(value.sourceText),
-      createdAt: stringOrEmpty(value.createdAt)
+      createdAt: timestampOrZero(value.createdAt)
+    };
+  }
+
+  if (value.kind === "ledger_amount" && typeof value.category === "string" && typeof value.occurredAt === "string") {
+    return {
+      kind: "ledger_amount",
+      direction: value.direction === "expense" || value.direction === "income" ? value.direction : null,
+      category: value.category || "未分类",
+      occurredAt: value.occurredAt,
+      counterparty: nullableString(value.counterparty),
+      note: nullableString(value.note),
+      sourceText: stringOrEmpty(value.sourceText),
+      createdAt: timestampOrZero(value.createdAt)
+    };
+  }
+
+  const amountCents = isRecord(value) && typeof value.amountCents === "number" ? value.amountCents : null;
+
+  if (
+    value.kind === "ledger_direction" &&
+    amountCents !== null &&
+    Number.isSafeInteger(amountCents) &&
+    amountCents >= 0 &&
+    typeof value.category === "string" &&
+    typeof value.occurredAt === "string"
+  ) {
+    return {
+      kind: "ledger_direction",
+      amountCents,
+      category: value.category || "未分类",
+      occurredAt: value.occurredAt,
+      counterparty: nullableString(value.counterparty),
+      note: nullableString(value.note),
+      sourceText: stringOrEmpty(value.sourceText),
+      createdAt: timestampOrZero(value.createdAt)
     };
   }
 
@@ -113,6 +186,19 @@ function stringOrEmpty(value: unknown) {
   return typeof value === "string" ? value : "";
 }
 
+function timestampOrZero(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value) {
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -122,6 +208,10 @@ function isCalendarEvent(value: CalendarEvent | null): value is CalendarEvent {
 }
 
 function isReminder(value: Reminder | null): value is Reminder {
+  return Boolean(value);
+}
+
+function isLedgerEntry(value: LedgerEntry | null): value is LedgerEntry {
   return Boolean(value);
 }
 

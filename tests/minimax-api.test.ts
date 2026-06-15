@@ -3,12 +3,18 @@ import { existsSync, readFileSync } from "node:fs";
 
 const parserPath = "lib/ai/minimax-event-parser.ts";
 const routePath = "app/api/record-event/route.ts";
+const recordParserPath = "lib/ai/minimax-record-parser.ts";
+const recordRoutePath = "app/api/record-input/route.ts";
 
 assert.equal(existsSync(parserPath), true);
 assert.equal(existsSync(routePath), true);
+assert.equal(existsSync(recordParserPath), true);
+assert.equal(existsSync(recordRoutePath), true);
 
 const parser = readFileSync(parserPath, "utf8");
 const route = readFileSync(routePath, "utf8");
+const recordParser = readFileSync(recordParserPath, "utf8");
+const recordRoute = readFileSync(recordRoutePath, "utf8");
 
 assert.match(parser, /MINIMAX_API_KEY/);
 assert.match(parser, /OPENAI_API_KEY/);
@@ -40,3 +46,18 @@ assert.match(route, /export async function POST/);
 assert.match(route, /parseMiniMaxEventInput/);
 assert.match(route, /payload\.now/);
 assert.match(route, /NextResponse\.json/);
+
+assert.match(recordParser, /parseMiniMaxRecordInput/);
+assert.match(recordParser, /create_ledger/);
+assert.match(recordParser, /amountCents/);
+assert.match(recordParser, /direction/);
+assert.match(recordParser, /category/);
+assert.match(recordParser, /occurredAt/);
+assert.match(recordParser, /默认记为当前时间/);
+assert.match(recordParser, /金额是多少？/);
+assert.match(recordParser, /这是收入还是支出？/);
+
+assert.match(recordRoute, /export async function POST/);
+assert.match(recordRoute, /parseMiniMaxRecordInput/);
+assert.match(recordRoute, /payload\.now/);
+assert.match(recordRoute, /NextResponse\.json/);

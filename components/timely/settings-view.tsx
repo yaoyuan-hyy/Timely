@@ -1,15 +1,17 @@
 "use client";
 
-import { CalendarDays, Clock3, MessageCircle, RefreshCcw, ShieldCheck } from "lucide-react";
+import { CalendarDays, Clock3, MessageCircle, ReceiptText, RefreshCcw, ShieldCheck } from "lucide-react";
 
 export function SettingsView({
   eventCount,
   cancelledCount,
+  ledgerCount,
   hasPendingClarification,
   onReset
 }: {
   eventCount: number;
   cancelledCount: number;
+  ledgerCount: number;
   hasPendingClarification: boolean;
   onReset: () => void;
 }) {
@@ -37,6 +39,13 @@ export function SettingsView({
             <p>{cancelledCount} 个可恢复记录</p>
           </div>
           <RefreshCcw size={19} />
+        </article>
+        <article className="settings-row">
+          <div>
+            <h3>本地流水</h3>
+            <p>{ledgerCount} 条账目流水</p>
+          </div>
+          <ReceiptText size={19} />
         </article>
         <article className="settings-row">
           <div>

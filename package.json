@@ -9,7 +9,7 @@
     "lint": "next lint",
     "test": "npm run test:static && npm run test:behavior",
     "test:static": "node --test tests/minimax-api.test.ts tests/package-scripts.test.ts tests/static-preview.test.ts tests/ui-shell.test.ts",
-    "test:behavior": "tsc tests/record-events.test.ts tests/time.test.ts tests/state.test.ts lib/event-recording.ts lib/types.ts lib/time.ts lib/state.ts --module commonjs --moduleResolution node --target ES2020 --outDir /tmp/timely-cjs --esModuleInterop --skipLibCheck --strict && node --test /tmp/timely-cjs/tests/record-events.test.js /tmp/timely-cjs/tests/time.test.js /tmp/timely-cjs/tests/state.test.js",
+    "test:behavior": "tsc tests/record-events.test.ts tests/record-input.test.ts tests/ledger-recording.test.ts tests/ledger-stats.test.ts tests/ledger-state.test.ts tests/time.test.ts tests/state.test.ts lib/event-recording.ts lib/record-input.ts lib/ledger-recording.ts lib/ledger-stats.ts lib/ledger-state.ts lib/types.ts lib/time.ts lib/state.ts --module commonjs --moduleResolution node --target ES2020 --outDir /tmp/timely-cjs --esModuleInterop --skipLibCheck --strict && node --test /tmp/timely-cjs/tests/record-events.test.js /tmp/timely-cjs/tests/record-input.test.js /tmp/timely-cjs/tests/ledger-recording.test.js /tmp/timely-cjs/tests/ledger-stats.test.js /tmp/timely-cjs/tests/ledger-state.test.js /tmp/timely-cjs/tests/time.test.js /tmp/timely-cjs/tests/state.test.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

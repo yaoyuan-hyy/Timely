@@ -1,4 +1,5 @@
 import type { CalendarEvent, ConversationMessage, TimelyState } from "./types";
+import { createLocalId } from "./local-id";
 import { buildShanghaiIso, getShanghaiParts, isValidShanghaiDateParts, toShanghaiDayKey, toShanghaiIso } from "./time";
 
 type ResolveOptions = {
@@ -32,6 +33,7 @@ type DeleteTarget = {
   title: string | null;
   targetDate: string | null;
   startsAt: string | null;
+  time: TimeParts | null;
   period: "morning" | "afternoon" | "evening" | null;
 };
 
@@ -41,8 +43,9 @@ export function resolveEventRecordInput(
   options: ResolveOptions = {}
 ): TimelyState {
   const now = options.now ?? new Date();
-  const createId = options.createId ?? makeId;
+  const createId = options.createId ?? createLocalId;
   const createdAt = toShanghaiIso(now);
+  const createdAtMs = now.getTime();
   const rawText = input.trim();
   const normalizedText = normalizeText(rawText);
 
@@ -123,7 +126,7 @@ export function resolveEventRecordInput(
         kind: "event_time",
         title,
         sourceText: rawText,
-        createdAt
+        createdAt: createdAtMs
       },
       messages: [...current.messages, userMessage, createMessage("assistant", "什么时候？", createdAt, createId)]
     };
@@ -143,6 +146,7 @@ export function resolveEventRecordInputWithAi(
       title: result.title,
       targetDate: result.targetDate ?? dateKeyFromIso(result.startsAt),
       startsAt: result.startsAt,
+      time: null,
       period: null
     });
   }
@@ -152,7 +156,7 @@ export function resolveEventRecordInputWithAi(
   }
 
   const now = options.now ?? new Date();
-  const createId = options.createId ?? makeId;
+  const createId = options.createId ?? createLocalId;
   const createdAt = toShanghaiIso(now);
   const rawText = input.trim();
   const userMessage = createMessage("user", rawText, createdAt, createId);
@@ -186,14 +190,16 @@ function resolveDeleteInput(
   aiTarget: DeleteTarget | null = null
 ): TimelyState {
   const now = options.now ?? new Date();
-  const createId = options.createId ?? makeId;
+  const createId = options.createId ?? createLocalId;
   const createdAt = toShanghaiIso(now);
+  const createdAtMs = now.getTime();
   const rawText = input.trim();
   const normalizedText = normalizeText(rawText);
   const userMessage = createMessage("user", rawText, createdAt, createId);
   const pending = current.pendingClarification?.kind === "event_delete" ? current.pendingClarification : null;
   const parsedTarget = parseDeleteTarget(normalizedText, now);
-  const startsAt = aiTarget?.startsAt ?? parsedTarget.startsAt;
+  const startsAt =
+    aiTarget?.startsAt ?? parsedTarget.startsAt ?? buildPendingDateTime(pending?.targetDate, parsedTarget.time);
   const targetDate =
     aiTarget?.targetDate ?? dateKeyFromIso(startsAt) ?? parsedTarget.targetDate ?? pending?.targetDate ?? null;
   const title = cleanTitle(aiTarget?.title) ?? parsedTarget.title ?? pending?.title ?? null;
@@ -204,16 +210,40 @@ function resolveDeleteInput(
   }
 
   if (!targetDate && !startsAt) {
+    const titleOnlyMatches = findDeleteMatches(current.events, {
+      title,
+      targetDate: null,
+      startsAt: null,
+      time: null,
+      period
+    });
+
+    if (titleOnlyMatches.length === 1) {
+      return deleteMatchedEvent(current, userMessage, titleOnlyMatches[0], createdAt, createId);
+    }
+
+    if (titleOnlyMatches.length > 1) {
+      return {
+        ...current,
+        pendingClarification: {
+          kind: "event_delete",
+          title,
+          targetDate: null,
+          sourceText: rawText,
+          createdAt: createdAtMs
+        },
+        messages: [
+          ...current.messages,
+          userMessage,
+          createMessage("assistant", `有多条${title}记录，请再告诉是哪天几点的。`, createdAt, createId)
+        ]
+      };
+    }
+
     return {
       ...current,
-      pendingClarification: {
-        kind: "event_delete",
-        title,
-        targetDate: null,
-        sourceText: rawText,
-        createdAt
-      },
-      messages: [...current.messages, userMessage, createMessage("assistant", "什么时候？", createdAt, createId)]
+      pendingClarification: null,
+      messages: [...current.messages, userMessage, createMessage("assistant", "没找到这条记录。", createdAt, createId)]
     };
   }
 
@@ -221,6 +251,7 @@ function resolveDeleteInput(
     title,
     targetDate,
     startsAt,
+    time: parsedTarget.time,
     period
   });
 
@@ -240,7 +271,7 @@ function resolveDeleteInput(
         title,
         targetDate,
         sourceText: pending ? `${pending.sourceText} ${rawText}` : rawText,
-        createdAt
+        createdAt: createdAtMs
       },
       messages: [
         ...current.messages,
@@ -251,7 +282,16 @@ function resolveDeleteInput(
   }
 
   const [matchedEvent] = matches;
+  return deleteMatchedEvent(current, userMessage, matchedEvent, createdAt, createId);
+}
 
+function deleteMatchedEvent(
+  current: TimelyState,
+  userMessage: ConversationMessage,
+  matchedEvent: CalendarEvent,
+  createdAt: string,
+  createId: (prefix: string) => string
+): TimelyState {
   return {
     ...current,
     pendingClarification: null,
@@ -348,6 +388,7 @@ function parseDeleteTarget(text: string, now: Date): DeleteTarget {
     title: extractDeleteTitle(text),
     targetDate: validDate ? formatDateKey(validDate) : null,
     startsAt,
+    time,
     period: parsePeriod(text)
   };
 }
@@ -522,6 +563,7 @@ function extractDeleteTitle(text: string) {
       .replace(/^(请|麻烦)?(帮我|给我)?把?/g, "")
       .replace(/(帮我|给我|把)/g, "")
       .replace(/(删除|删掉|删了|清除|取消|移除|去掉)(一下|了)?/g, "")
+      .replace(/(上午|早上|下午|晚上|傍晚|中午)/g, "")
       .replace(/(这个|那个|这条|那条|的|记录|事件|日程)/g, "")
   );
 }
@@ -616,7 +658,7 @@ function isInPeriod(iso: string, period: DeleteTarget["period"]) {
   }
 
   if (period === "afternoon") {
-    return hour >= 12 && hour < 18;
+    return hour >= 12 && hour <= 18;
   }
 
   if (period === "evening") {
@@ -721,10 +763,15 @@ function dateKeyFromIso(iso: string | null | undefined) {
   return iso ? dayKeyFromIso(iso) : null;
 }
 
-function makeId(prefix: string) {
-  if (typeof globalThis.crypto !== "undefined" && "randomUUID" in globalThis.crypto) {
-    return `${prefix}-${globalThis.crypto.randomUUID()}`;
+function buildPendingDateTime(targetDate: string | null | undefined, time: TimeParts | null) {
+  if (!targetDate || !time) {
+    return null;
   }
 
-  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const [year, month, day] = targetDate.split("-").map(Number);
+  if (!isValidShanghaiDateParts(year, month, day)) {
+    return null;
+  }
+
+  return buildShanghaiIso(year, month, day, time.hour, time.minute);
 }

@@ -1,38 +1,130 @@
 import * as assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
+const ledgerComponent = readFileSync("components/timely/ledger-view.tsx", "utf8");
 const component = [
   readFileSync("components/timely-app.tsx", "utf8"),
   readFileSync("components/timely/chat-view.tsx", "utf8"),
   readFileSync("components/timely/calendar-view.tsx", "utf8"),
+  ledgerComponent,
+  readFileSync("components/timely/nav-button.tsx", "utf8"),
   readFileSync("components/timely/settings-view.tsx", "utf8")
 ].join("\n");
+const hooks = [
+  readFileSync("hooks/use-record-submit.ts", "utf8"),
+  readFileSync("hooks/use-timely-actions.ts", "utf8")
+].join("\n");
+const appSurface = `${component}\n${hooks}`;
+const stylesheet = readFileSync("app/globals.css", "utf8");
 
 assert.match(component, /className="menu-trigger"/);
 assert.match(component, /components\/timely\/chat-view/);
 assert.match(component, /components\/timely\/calendar-view/);
+assert.match(component, /components\/timely\/ledger-view/);
 assert.match(component, /components\/timely\/settings-view/);
-assert.match(component, /className="clear-chat-button"/);
+assert.match(component, /className=\{`clear-chat-button/);
+assert.match(component, /isCalendarView && showCancelledRecords \? "active" : ""/);
 assert.match(component, /clearChatHistory/);
 assert.match(component, /cancelledEvents/);
 assert.match(component, /restoreEvent/);
 assert.match(component, /deleteCancelledEvent/);
 assert.match(component, /onPermanentDelete/);
+assert.match(component, /showCancelledRecords/);
+assert.match(component, /setShowCancelledRecords/);
+assert.match(component, /显示已取消记录/);
+assert.match(component, /隐藏已取消记录/);
+assert.match(component, /aria-pressed=\{view === "calendar"/);
+assert.match(component, /showCancelledRecords &&/);
 assert.match(component, /className=\{`drawer-backdrop/);
 assert.match(component, /className=\{`side-drawer/);
+assert.match(component, /className="composer-shell"/);
 assert.match(component, /className="voice-action"/);
-assert.match(component, /\/api\/record-event/);
-assert.match(component, /resolveEventRecordInputWithAi/);
+assert.match(component, /className="voice-action-core"/);
+assert.match(appSurface, /\/api\/record-input/);
+assert.match(appSurface, /resolveRecordInputWithAi/);
+assert.match(appSurface, /resolveRecordInput/);
 assert.match(component, /isSubmitting/);
+assert.match(component, /view="ledger"/);
+assert.match(component, /流水/);
+assert.match(component, /ReceiptText/);
+assert.match(component, /Trash2/);
+assert.match(component, /ledgerEntriesForMonth/);
+assert.match(component, /summarizeLedgerEntries/);
+assert.match(component, /groupLedgerEntriesByDay/);
+assert.match(appSurface, /deleteLedgerEntry/);
+assert.match(appSurface, /updateLedgerEntryDetails/);
+assert.match(appSurface, /addLedgerEntry/);
+assert.match(appSurface, /onAddEntry/);
+assert.match(component, /className="view-stack ledger-view"/);
+assert.match(component, /className="ledger-period-selector"/);
+assert.match(component, /aria-label="选择流水统计周期"/);
+assert.match(component, /本月/);
+assert.match(component, /本年/);
+assert.match(component, /isMonthPickerOpen/);
+assert.match(component, /chooseLedgerMonth/);
+assert.match(component, /setLedgerMode\("year"\)/);
+assert.match(component, /summarizeLedgerEntriesByMonth/);
+assert.match(component, /ledger-month-picker/);
+assert.match(component, /ledger-year-list/);
+assert.match(component, /ledger-month-item/);
+assert.match(component, /selectedLedgerEntry/);
+assert.match(component, /amountDraft/);
+assert.match(component, /categoryDraft/);
+assert.match(component, /saveLedgerEdit/);
+assert.match(component, /onDeleteEntry/);
+assert.match(component, /onUpdateEntry/);
+assert.match(component, /className="ledger-editor-backdrop"/);
+assert.match(component, /className="ledger-editor-drawer"/);
+assert.match(component, /className="ledger-editor-form"/);
+assert.match(component, /className="ledger-manual-form"/);
+assert.match(component, /className="ledger-add-trigger"/);
+assert.match(component, /aria-label="手动添加流水"/);
+assert.match(component, /className="ledger-direction-segment"/);
+assert.match(component, /className="ledger-category-grid"/);
+assert.match(component, /className="ledger-entry-delete"/);
+assert.match(component, /aria-label="编辑流水"/);
+assert.match(component, /aria-label=\{`删除/);
+assert.match(component, /className="ledger-summary"/);
+assert.match(component, /className=\{`ledger-entry-row/);
+assert.match(component, /className="ledger-category-emoji"/);
+assert.match(component, /getLedgerCategoryEmoji/);
+assert.match(component, /餐饮[\s\S]*🍔/);
+assert.doesNotMatch(ledgerComponent, /formatTime/);
+assert.match(component, /className="ledger-day-shell"/);
 assert.match(component, /className="calendar-month"/);
 assert.match(component, /className="year-select"/);
 assert.match(component, /className="month-select"/);
+assert.match(component, /className="calendar-month-section calendar-panel"/);
 assert.match(component, /className="month-grid"/);
 assert.match(component, /className="day-detail"/);
 assert.match(component, /className="timeline-grid"/);
-assert.match(component, /className="cancelled-records"/);
+assert.match(component, /className="cancelled-records cancelled-records-spring"/);
 assert.match(component, /彻底删除/);
 assert.match(component, /setSelectedDayKey/);
+assert.match(stylesheet, /--motion-spring/);
+assert.match(stylesheet, /cubic-bezier\(0\.32, 0\.72, 0, 1\)/);
+assert.match(stylesheet, /--page: #f4efe7/);
+assert.match(stylesheet, /animation: cancelledSpringIn/);
+assert.match(stylesheet, /\.ledger-view/);
+assert.match(stylesheet, /\.ledger-period-selector/);
+assert.match(stylesheet, /\.ledger-month-picker/);
+assert.match(stylesheet, /\.ledger-year-list/);
+assert.match(stylesheet, /\.ledger-month-item/);
+assert.match(stylesheet, /\.ledger-entry-delete/);
+assert.match(stylesheet, /\.ledger-editor-backdrop/);
+assert.match(stylesheet, /\.ledger-editor-drawer/);
+assert.match(stylesheet, /\.ledger-editor-form/);
+assert.match(stylesheet, /\.ledger-add-trigger/);
+assert.match(stylesheet, /\.ledger-manual-drawer/);
+assert.match(stylesheet, /\.ledger-manual-form/);
+assert.match(stylesheet, /\.ledger-direction-segment/);
+assert.match(stylesheet, /\.ledger-category-grid/);
+assert.match(stylesheet, /\.ledger-manual-save/);
+assert.match(stylesheet, /\.ledger-summary/);
+assert.match(stylesheet, /\.ledger-category-emoji/);
+assert.match(stylesheet, /\.ledger-day-shell/);
+assert.match(stylesheet, /\.ledger-entry-row/);
+assert.doesNotMatch(component, /ledger-entry-icon/);
 assert.doesNotMatch(component, /buildScrollableMonths/);
 assert.doesNotMatch(component, /scrollMonths\.map/);
 assert.doesNotMatch(component, /上下滑动浏览月份/);

@@ -38,24 +38,28 @@ export function ChatView({
         </section>
       )}
 
-      <form className="composer" onSubmit={onSubmit}>
-        <input
-          aria-label="输入要记录的内容"
-          placeholder={isSubmitting ? "正在记录..." : "记录某个时间点发生的事..."}
-          value={draft}
-          disabled={isSubmitting}
-          onChange={(event) => setDraft(event.target.value)}
-        />
-        <button
-          className="voice-action"
-          type="button"
-          title="语音输入暂未接入"
-          aria-label="语音输入暂未接入"
-          aria-pressed="false"
-          disabled
-        >
-          <Mic size={22} />
-        </button>
+      <form className="composer-shell" onSubmit={onSubmit}>
+        <div className="composer">
+          <input
+            aria-label="输入要记录的内容"
+            placeholder={isSubmitting ? "正在记录..." : "记录日程或流水..."}
+            value={draft}
+            disabled={isSubmitting}
+            onChange={(event) => setDraft(event.target.value)}
+          />
+          <button
+            className="voice-action"
+            type="button"
+            title="语音输入暂未接入"
+            aria-label="语音输入暂未接入"
+            aria-pressed="false"
+            disabled
+          >
+            <span className="voice-action-core">
+              <Mic size={22} strokeWidth={1.75} />
+            </span>
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -12,12 +12,14 @@ const dayMs = 24 * 60 * 60 * 1000;
 export function CalendarView({
   events,
   cancelledEvents,
+  showCancelledRecords,
   onCancel,
   onRestore,
   onPermanentDelete
 }: {
   events: CalendarEvent[];
   cancelledEvents: CalendarEvent[];
+  showCancelledRecords: boolean;
   onCancel: (eventId: string) => void;
   onRestore: (eventId: string) => void;
   onPermanentDelete: (eventId: string) => void;
@@ -189,7 +191,7 @@ export function CalendarView({
             </div>
           </div>
 
-          <section className="calendar-month-section" aria-label="当前月份日期">
+          <section className="calendar-month-section calendar-panel" aria-label="当前月份日期">
             <h3>
               {monthDate.getFullYear()}年 {monthDate.getMonth() + 1}月
             </h3>
@@ -218,7 +220,9 @@ export function CalendarView({
             </div>
           </section>
 
-          <CancelledRecords events={cancelledEvents} onRestore={onRestore} onPermanentDelete={onPermanentDelete} />
+          {showCancelledRecords && (
+            <CancelledRecords events={cancelledEvents} onRestore={onRestore} onPermanentDelete={onPermanentDelete} />
+          )}
         </section>
       )}
     </div>
@@ -239,7 +243,7 @@ function CancelledRecords({
   }
 
   return (
-    <section className="cancelled-records" aria-label="已取消记录">
+    <section className="cancelled-records cancelled-records-spring" aria-label="已取消记录">
       <div className="cancelled-records-head">
         <h2>已取消记录</h2>
         <span>{events.length} 条</span>
