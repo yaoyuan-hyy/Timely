@@ -398,6 +398,7 @@ function inferLedgerNote(text: string) {
   }
 
   const note = purchaseMatch[1]
+    .replace(/^(?:\d+(?:\.\d+)?|[零〇一二两三四五六七八九十]{1,3})(?:个|台|件|只|杯|份|张|次)?/, "")
     .replace(/^(一个|一台|一件|一只|一杯|一份|个|台|件|只|杯|份)/, "")
     .replace(/多少钱$/, "")
     .trim();

@@ -14,7 +14,11 @@ const hooks = [
   readFileSync("hooks/use-record-submit.ts", "utf8"),
   readFileSync("hooks/use-timely-actions.ts", "utf8")
 ].join("\n");
-const appSurface = `${component}\n${hooks}`;
+const agentSurface = [
+  readFileSync("lib/agent/record-workflow.ts", "utf8"),
+  readFileSync("lib/ui-popup.ts", "utf8")
+].join("\n");
+const appSurface = `${component}\n${hooks}\n${agentSurface}`;
 const stylesheet = readFileSync("app/globals.css", "utf8");
 
 assert.match(component, /className="menu-trigger"/);
@@ -41,8 +45,14 @@ assert.match(component, /className="composer-shell"/);
 assert.match(component, /className="voice-action"/);
 assert.match(component, /className="voice-action-core"/);
 assert.match(appSurface, /\/api\/record-input/);
-assert.match(appSurface, /resolveRecordInputWithAi/);
-assert.match(appSurface, /resolveRecordInput/);
+assert.match(appSurface, /runTimelyAgentWorkflow/);
+assert.match(appSurface, /UI_POPUP/);
+assert.match(appSurface, /extractUiPopupFromMessage/);
+assert.match(appSurface, /requestAiRecordParse/);
+assert.match(component, /className="query-popup-backdrop"/);
+assert.match(component, /className="query-popup-panel"/);
+assert.match(component, /className="query-popup-section"/);
+assert.match(component, /暂无记录/);
 assert.match(component, /isSubmitting/);
 assert.match(component, /view="ledger"/);
 assert.match(component, /流水/);
@@ -104,7 +114,13 @@ assert.match(component, /setSelectedDayKey/);
 assert.match(stylesheet, /--motion-spring/);
 assert.match(stylesheet, /cubic-bezier\(0\.32, 0\.72, 0, 1\)/);
 assert.match(stylesheet, /--page: #f4efe7/);
+assert.match(stylesheet, /--focus-ring/);
+assert.match(stylesheet, /:focus-visible/);
+assert.match(stylesheet, /\.composer-shell:focus-within/);
+assert.match(stylesheet, /\.phone-shell::before/);
+assert.match(stylesheet, /backdrop-filter/);
 assert.match(stylesheet, /animation: cancelledSpringIn/);
+assert.match(stylesheet, /@media \(prefers-reduced-motion: reduce\)/);
 assert.match(stylesheet, /\.ledger-view/);
 assert.match(stylesheet, /\.ledger-period-selector/);
 assert.match(stylesheet, /\.ledger-month-picker/);
@@ -124,6 +140,9 @@ assert.match(stylesheet, /\.ledger-summary/);
 assert.match(stylesheet, /\.ledger-category-emoji/);
 assert.match(stylesheet, /\.ledger-day-shell/);
 assert.match(stylesheet, /\.ledger-entry-row/);
+assert.match(stylesheet, /\.query-popup-backdrop/);
+assert.match(stylesheet, /\.query-popup-panel/);
+assert.match(stylesheet, /\.query-popup-card/);
 assert.doesNotMatch(component, /ledger-entry-icon/);
 assert.doesNotMatch(component, /buildScrollableMonths/);
 assert.doesNotMatch(component, /scrollMonths\.map/);

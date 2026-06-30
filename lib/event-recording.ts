@@ -35,6 +35,7 @@ type DeleteTarget = {
   startsAt: string | null;
   time: TimeParts | null;
   period: "morning" | "afternoon" | "evening" | null;
+  ordinalIndex: number | null;
 };
 
 export function resolveEventRecordInput(
@@ -147,11 +148,12 @@ export function resolveEventRecordInputWithAi(
       targetDate: result.targetDate ?? dateKeyFromIso(result.startsAt),
       startsAt: result.startsAt,
       time: null,
-      period: null
+      period: null,
+      ordinalIndex: null
     });
   }
 
-  if (result.intent !== "create_event" || !result.title || !result.startsAt) {
+  if (result.intent !== "create_event" || !result.title || !result.startsAt || !isValidEventDateTime(result.startsAt)) {
     return resolveEventRecordInput(current, input, options);
   }
 
@@ -198,12 +200,23 @@ function resolveDeleteInput(
   const userMessage = createMessage("user", rawText, createdAt, createId);
   const pending = current.pendingClarification?.kind === "event_delete" ? current.pendingClarification : null;
   const parsedTarget = parseDeleteTarget(normalizedText, now);
+  const pendingAwareTarget = pending ? parseDeleteTarget(normalizeText(`${pending.sourceText} ${rawText}`), now) : null;
+  const targetTime = pendingAwareTarget?.time ?? parsedTarget.time;
   const startsAt =
-    aiTarget?.startsAt ?? parsedTarget.startsAt ?? buildPendingDateTime(pending?.targetDate, parsedTarget.time);
+    aiTarget?.startsAt ??
+    pendingAwareTarget?.startsAt ??
+    parsedTarget.startsAt ??
+    buildPendingDateTime(pending?.targetDate, targetTime);
   const targetDate =
-    aiTarget?.targetDate ?? dateKeyFromIso(startsAt) ?? parsedTarget.targetDate ?? pending?.targetDate ?? null;
+    aiTarget?.targetDate ??
+    dateKeyFromIso(startsAt) ??
+    pendingAwareTarget?.targetDate ??
+    parsedTarget.targetDate ??
+    pending?.targetDate ??
+    null;
   const title = cleanTitle(aiTarget?.title) ?? parsedTarget.title ?? pending?.title ?? null;
-  const period = parsedTarget.period ?? aiTarget?.period ?? null;
+  const period = parsedTarget.period ?? pendingAwareTarget?.period ?? aiTarget?.period ?? null;
+  const ordinalIndex = parsedTarget.ordinalIndex ?? pendingAwareTarget?.ordinalIndex ?? null;
 
   if (!title) {
     return appendAssistant(current, userMessage, "删除什么？", createdAt, createId);
@@ -215,8 +228,13 @@ function resolveDeleteInput(
       targetDate: null,
       startsAt: null,
       time: null,
-      period
+      period,
+      ordinalIndex: null
     });
+
+    if (ordinalIndex !== null) {
+      return deleteOrdinalMatch(current, userMessage, titleOnlyMatches, ordinalIndex, createdAt, createId);
+    }
 
     if (titleOnlyMatches.length === 1) {
       return deleteMatchedEvent(current, userMessage, titleOnlyMatches[0], createdAt, createId);
@@ -251,8 +269,9 @@ function resolveDeleteInput(
     title,
     targetDate,
     startsAt,
-    time: parsedTarget.time,
-    period
+    time: targetTime,
+    period,
+    ordinalIndex: null
   });
 
   if (matches.length === 0) {
@@ -261,6 +280,10 @@ function resolveDeleteInput(
       pendingClarification: null,
       messages: [...current.messages, userMessage, createMessage("assistant", "没找到这条记录。", createdAt, createId)]
     };
+  }
+
+  if (ordinalIndex !== null) {
+    return deleteOrdinalMatch(current, userMessage, matches, ordinalIndex, createdAt, createId);
   }
 
   if (matches.length > 1) {
@@ -282,6 +305,27 @@ function resolveDeleteInput(
   }
 
   const [matchedEvent] = matches;
+  return deleteMatchedEvent(current, userMessage, matchedEvent, createdAt, createId);
+}
+
+function deleteOrdinalMatch(
+  current: TimelyState,
+  userMessage: ConversationMessage,
+  matches: CalendarEvent[],
+  ordinalIndex: number,
+  createdAt: string,
+  createId: (prefix: string) => string
+) {
+  const sortedMatches = sortDeleteMatches(matches);
+  const matchedEvent = sortedMatches[ordinalIndex] ?? null;
+
+  if (!matchedEvent) {
+    return {
+      ...current,
+      messages: [...current.messages, userMessage, createMessage("assistant", "没找到这条记录。", createdAt, createId)]
+    };
+  }
+
   return deleteMatchedEvent(current, userMessage, matchedEvent, createdAt, createId);
 }
 
@@ -389,7 +433,8 @@ function parseDeleteTarget(text: string, now: Date): DeleteTarget {
     targetDate: validDate ? formatDateKey(validDate) : null,
     startsAt,
     time,
-    period: parsePeriod(text)
+    period: parsePeriod(text),
+    ordinalIndex: parseOrdinalIndex(text)
   };
 }
 
@@ -578,6 +623,7 @@ function extractDeleteTitle(text: string) {
       .replace(/(帮我|给我|把)/g, "")
       .replace(/(删除|删掉|删了|清除|取消|移除|去掉)(一下|了)?/g, "")
       .replace(/(上午|早上|下午|晚上|傍晚|中午)/g, "")
+      .replace(/(?:第)?(?:[一二两三四五六七八九十]|\d{1,2})(?:条|个|项|场|次)/g, "")
       .replace(/(这个|那个|这条|那条|的|记录|事件|日程)/g, "")
   );
 }
@@ -698,6 +744,20 @@ function parsePeriod(text: string): DeleteTarget["period"] {
   return null;
 }
 
+function parseOrdinalIndex(text: string) {
+  const ordinal = text.match(/(?:第)?([一二两三四五六七八九十]|\d{1,2})(?:条|个|项|场|次)/);
+  if (!ordinal) {
+    return null;
+  }
+
+  const value = parseNumberText(ordinal[1]);
+  return value === null || value <= 0 ? null : value - 1;
+}
+
+function sortDeleteMatches(events: CalendarEvent[]) {
+  return [...events].sort((first, second) => new Date(first.startsAt).getTime() - new Date(second.startsAt).getTime());
+}
+
 function parseWeekdayDate(current: DateParts, modifier: string | undefined, weekdayText: string): DateParts {
   const targetDay = weekdayIndex(weekdayText);
   const currentDate = new Date(Date.UTC(current.year, current.month - 1, current.day));
@@ -805,6 +865,28 @@ function dayKeyFromIso(iso: string) {
 
 function dateKeyFromIso(iso: string | null | undefined) {
   return iso ? dayKeyFromIso(iso) : null;
+}
+
+function isValidEventDateTime(iso: string) {
+  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:\+08:00|Z)$/);
+  if (!match || Number.isNaN(new Date(iso).getTime())) {
+    return false;
+  }
+
+  const [, year, month, day, hour, minute, second = "00"] = match;
+  const hourNumber = Number(hour);
+  const minuteNumber = Number(minute);
+  const secondNumber = Number(second);
+
+  return (
+    isValidShanghaiDateParts(Number(year), Number(month), Number(day)) &&
+    hourNumber >= 0 &&
+    hourNumber <= 23 &&
+    minuteNumber >= 0 &&
+    minuteNumber <= 59 &&
+    secondNumber >= 0 &&
+    secondNumber <= 59
+  );
 }
 
 function buildPendingDateTime(targetDate: string | null | undefined, time: TimeParts | null) {

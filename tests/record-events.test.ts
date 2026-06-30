@@ -121,6 +121,38 @@ function stateWithTwoTomorrowMeetings(): TimelyState {
   };
 }
 
+function stateWithMorningAndAfternoonMeetings(): TimelyState {
+  return {
+    ...emptyState(),
+    events: [
+      {
+        id: "event-tomorrow-ten-meeting",
+        title: "会议",
+        startsAt: "2026-06-16T10:00:00+08:00",
+        endsAt: null,
+        location: null,
+        notes: null,
+        status: "active",
+        sourceText: "记录明天上午十点有个会议",
+        createdAt: "2026-06-15T09:00:00+08:00",
+        updatedAt: "2026-06-15T09:00:00+08:00"
+      },
+      {
+        id: "event-tomorrow-six-meeting",
+        title: "会议",
+        startsAt: "2026-06-16T18:00:00+08:00",
+        endsAt: null,
+        location: null,
+        notes: null,
+        status: "active",
+        sourceText: "记录明天下午六点有个会议",
+        createdAt: "2026-06-15T09:00:00+08:00",
+        updatedAt: "2026-06-15T09:00:00+08:00"
+      }
+    ]
+  };
+}
+
 {
   const state = resolveEventRecordInput(emptyState(), "帮我记录一下6月13号下午3点有一个会议", {
     createId: deterministicIds(),
@@ -502,4 +534,68 @@ function stateWithTwoTomorrowMeetings(): TimelyState {
   assert.equal(state.events[1].status, "cancelled");
   assert.equal(state.pendingClarification, null);
   assert.equal(state.messages.at(-1)?.content, "已删除。6月16日 18:00，会议。");
+}
+
+{
+  const ambiguous = resolveEventRecordInput(stateWithMorningAndAfternoonMeetings(), "删除明天的会议记录", {
+    createId: deterministicIds(),
+    now: monday
+  });
+  const state = resolveEventRecordInput(ambiguous, "下午那个", {
+    createId: deterministicIds(),
+    now: monday
+  });
+
+  assert.equal(state.events[0].status, "active");
+  assert.equal(state.events[1].status, "cancelled");
+  assert.equal(state.pendingClarification, null);
+  assert.equal(state.messages.at(-1)?.content, "已删除。6月16日 18:00，会议。");
+}
+
+{
+  const ambiguous = resolveEventRecordInput(stateWithTwoTomorrowMeetings(), "删除明天下午的会议记录", {
+    createId: deterministicIds(),
+    now: monday
+  });
+  const state = resolveEventRecordInput(ambiguous, "六点那个", {
+    createId: deterministicIds(),
+    now: monday
+  });
+
+  assert.equal(state.events[0].status, "active");
+  assert.equal(state.events[1].status, "cancelled");
+  assert.equal(state.pendingClarification, null);
+  assert.equal(state.messages.at(-1)?.content, "已删除。6月16日 18:00，会议。");
+}
+
+{
+  const ambiguous = resolveEventRecordInput(stateWithTwoTomorrowMeetings(), "删除明天下午的会议记录", {
+    createId: deterministicIds(),
+    now: monday
+  });
+  const state = resolveEventRecordInput(ambiguous, "第二条", {
+    createId: deterministicIds(),
+    now: monday
+  });
+
+  assert.equal(state.events[0].status, "active");
+  assert.equal(state.events[1].status, "cancelled");
+  assert.equal(state.pendingClarification, null);
+  assert.equal(state.messages.at(-1)?.content, "已删除。6月16日 18:00，会议。");
+}
+
+{
+  const ambiguous = resolveEventRecordInput(stateWithTwoTomorrowMeetings(), "删除明天下午的会议记录", {
+    createId: deterministicIds(),
+    now: monday
+  });
+  const state = resolveEventRecordInput(ambiguous, "下午那个", {
+    createId: deterministicIds(),
+    now: monday
+  });
+
+  assert.equal(state.events[0].status, "active");
+  assert.equal(state.events[1].status, "active");
+  assert.equal(state.pendingClarification?.kind, "event_delete");
+  assert.equal(state.messages.at(-1)?.content, "这天有多条会议记录，请再告诉我是几点的。");
 }

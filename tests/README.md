@@ -4,16 +4,32 @@
 
 ## 测试文件概览
 
-当前共有 3 个测试文件：
+当前测试覆盖静态结构、业务行为、Agent workflow 和离线 eval：
 
 - `record-events.test.ts`
+- `record-input.test.ts`
+- `ledger-recording.test.ts`
+- `ledger-state.test.ts`
+- `ledger-stats.test.ts`
+- `time.test.ts`
+- `state.test.ts`
 - `minimax-api.test.ts`
+- `package-scripts.test.ts`
 - `ui-shell.test.ts`
+- `record-workflow.test.ts`
+- `query-workflow.test.ts`
+- `app-workflow.test.ts`
+- `ui-popup.test.ts`
+- `eval-record-workflow.test.ts`
 
-这些测试分成三类：
+这些测试分成几类：
 
 - 事件记录行为测试：验证自然语言输入最终如何改变日程状态。
+- 统一记录行为测试：验证事件和流水输入如何通过同一个入口分流。
+- 流水记录测试：验证金额、日期、数量词和 pending 补全。
 - MiniMax API 接入测试：验证 AI prompt、schema、API route 关键能力是否存在。
+- LangGraph workflow 测试：验证 supervisor 路由、写入 workflow、查询 workflow、UI_POPUP 协议。
+- Eval dataset 测试：验证 JSONL 语料可加载、可评分、可汇总。
 - UI 结构测试：验证首页、侧边栏、输入栏、日历视图等关键 UI 壳层没有被误删。
 
 ## 1. `record-events.test.ts`
@@ -148,7 +164,58 @@
 
 这些测试是为了防止之后改 prompt 时，把核心 AI 解析规则删掉。
 
-## 3. `ui-shell.test.ts`
+## 3. `record-workflow.test.ts`
+
+这个测试直接覆盖 `lib/agent/record-workflow.ts`，不调用真实网络。
+
+它验证：
+
+- 没有 AI parser 时，workflow 走 `local_fallback`。
+- AI 返回有效结构化结果时，workflow 走 `ai_result` 并写入本地状态。
+- AI parser 抛错时，workflow 捕获 `aiError` 并回到本地解析。
+- trace 会记录 `normalize_input`、`call_ai_parser`、`apply_*`、`summarize_outcome`。
+
+## 4. `eval-record-workflow.test.ts`
+
+这个测试覆盖离线 eval runner：
+
+- 从 JSONL 文本加载 eval case。
+- 调用 `scoreRecordEvalCase` 跑 LangGraph workflow。
+- 汇总通过率。
+
+正式语料集在 `evals/record-input-cases.jsonl`，可用下面命令运行：
+
+```bash
+npm run eval:records
+```
+
+## 5. `query-workflow.test.ts`
+
+这个测试覆盖 `lib/agent/query-workflow.ts`：
+
+- “明天下午有什么安排？”会查询 active event，并输出 `UI_POPUP`。
+- “明天下午”会限定到下午时间窗口，不误返回上午日程。
+- “下周三的会议是几点？”会落到下一自然周的周三。
+- “我昨天点外卖支出了多少？”会汇总 ledger 支出。
+- “上个月点外卖支出了多少？”会按上个月和餐饮/外卖类别查询流水。
+- 没有记录时仍输出 `query_status: "empty"` 的弹窗 payload。
+
+## 6. `app-workflow.test.ts`
+
+这个测试覆盖 supervisor agent：
+
+- 查询类输入路由到 `query_agent`。
+- 记录类输入路由到 `write_agent`。
+
+## 7. `ui-popup.test.ts`
+
+这个测试覆盖 `lib/ui-popup.ts`：
+
+- 构造 ````json UI_POPUP` 消息。
+- 从消息中解析 payload。
+- 从聊天气泡文本中剥离 UI block。
+
+## 8. `ui-shell.test.ts`
 
 这个测试读取 `components/timely-app.tsx`，验证关键 UI 结构还在。
 
@@ -160,13 +227,13 @@
 - 侧边栏遮罩：`drawer-backdrop`
 - 侧边栏：`side-drawer`
 - 麦克风按钮：`voice-action`
-- `/api/record-event` 调用
-- `resolveEventRecordInputWithAi` 接线
+- `/api/record-input` 调用
+- `runTimelyAgentWorkflow` 接线
+- 查询结果弹窗结构：`query-popup-backdrop`、`query-popup-panel`
 - 提交中状态：`isSubmitting`
 - 日历月视图：`calendar-month`
 - 年份选择：`year-select`
 - 月份选择：`month-select`
-- 上下滑动日历：`calendar-scroll`
 - 单日详情：`day-detail`
 - 时间轴：`timeline-grid`
 
@@ -192,11 +259,22 @@ node --test tests/minimax-api.test.ts
 
 ### 运行事件行为测试
 
-由于 `record-events.test.ts` 是 TypeScript 文件，当前做法是先编译到 `/tmp/timely-cjs`，再用 Node test runner 运行：
+行为测试统一由 npm script 编译并运行：
 
 ```bash
-npx tsc tests/record-events.test.ts lib/event-recording.ts lib/types.ts --module commonjs --moduleResolution node --target ES2020 --outDir /tmp/timely-cjs --esModuleInterop --skipLibCheck --strict
-node --test /tmp/timely-cjs/tests/record-events.test.js
+npm run test:behavior
+```
+
+### 运行 Agent workflow 测试
+
+```bash
+npm run test:agent
+```
+
+### 运行离线 eval
+
+```bash
+npm run eval:records
 ```
 
 ### 运行类型检查

@@ -303,6 +303,7 @@ export function LedgerView({
                   inputMode="decimal"
                   value={amountDraft}
                   aria-label="流水金额"
+                  aria-invalid={amountDraft.trim() ? parsedAmountCents === null : undefined}
                   onChange={(event) => setAmountDraft(event.target.value)}
                 />
               </label>
@@ -398,6 +399,7 @@ export function LedgerView({
                   inputMode="decimal"
                   value={manualAmountDraft}
                   aria-label="手动流水金额"
+                  aria-invalid={manualAmountDraft.trim() ? parsedManualAmountCents === null : undefined}
                   placeholder="0.00"
                   onChange={(event) => setManualAmountDraft(event.target.value)}
                 />

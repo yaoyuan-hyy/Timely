@@ -4,24 +4,31 @@ This file is the operating standard for agents working on Timely. Follow it befo
 
 ## Product Standard
 
-Timely is a mobile-first natural-language personal record app. Its current MVP is about event records only:
+Timely is a mobile-first natural-language personal record app. Its current app is event-first, with independent local ledger records and a LangGraph query surface:
 
 ```text
 Natural-language input
-  -> AI parse, with local fallback
-  -> write TimelyState
+  -> LangGraph supervisor agent
+  -> write agent or query agent
+  -> optional AI parse for writes, with local fallback
+  -> local query over TimelyState for personal-data questions
+  -> write TimelyState or emit UI_POPUP query payload
   -> persist in localStorage
-  -> view, cancel, restore, or permanently delete from the calendar
+  -> view, cancel, restore, delete, or inspect structured query cards
 ```
 
-Do not reposition Timely as a reminder app, planning app, task manager, focus timer, analytics tool, or finance app.
+Do not reposition Timely as a reminder app, planning app, task manager, focus timer, productivity analytics tool, or full finance app.
 
 Current scope:
 
 - Record `CalendarEvent` entries from natural language.
+- Record independent `LedgerEntry` entries from natural language.
+- Query existing local event and ledger records from natural language.
+- Trigger structured query UI through ````json UI_POPUP` blocks.
 - Support past and future time points.
 - Ask one concise clarification when required.
 - Show active events in calendar and timeline views.
+- Show ledger entries in the ledger view.
 - Treat cancelled events as recoverable history until the user permanently deletes them.
 - Keep data local-first with `localStorage` under `timely-event-record-state-v1`.
 
@@ -29,7 +36,8 @@ Out of scope until explicitly requested:
 
 - Notifications, reminders, task planning, priority scoring, focus timers, productivity analytics.
 - Account system, database, cloud sync, system calendar sync.
-- Ledger/accounting records. If introduced later, model them as a separate record type, not as `CalendarEvent`.
+- Full accounting, budgets, investment tracking, or analytics dashboards beyond the local ledger record surface.
+- A true task system. Task-like queries should return a structured empty state unless a task model is explicitly added.
 - Real voice input. The microphone button is currently a disabled placeholder.
 
 ## Visual Design Standard
@@ -103,6 +111,10 @@ Main files:
 - `lib/time.ts`: Shanghai-time utilities.
 - `lib/state.ts`: localStorage state normalizer/migration helper.
 - `lib/stats.ts`: event filtering and sorting helpers.
+- `lib/agent/app-workflow.ts`: LangGraph supervisor routing to query/write/chat agents.
+- `lib/agent/record-workflow.ts`: LangGraph write workflow.
+- `lib/agent/query-workflow.ts`: LangGraph local query workflow.
+- `lib/ui-popup.ts`: UI_POPUP build/parse helpers.
 - `lib/types.ts`: shared data model.
 
 Architecture rules:
@@ -122,6 +134,7 @@ Architecture rules:
 type TimelyState = {
   events: CalendarEvent[];
   reminders: Reminder[];
+  ledgerEntries: LedgerEntry[];
   messages: ConversationMessage[];
   pendingClarification: PendingClarification | null;
 };
@@ -129,7 +142,7 @@ type TimelyState = {
 
 Rules:
 
-- `events`, `messages`, and `pendingClarification` are the active MVP fields.
+- `events`, `ledgerEntries`, `messages`, and `pendingClarification` are the active fields.
 - Keep `reminders` for state compatibility, but do not build reminder UI without explicit scope change.
 - Normalize old or malformed localStorage data through `normalizeTimelyState`.
 - Bad JSON or incomplete state must not crash the app.
@@ -172,14 +185,22 @@ AI route:
 - MiniMax failures or timeouts should let the frontend fall back to local parsing.
 - AI only parses. It must not directly mutate state.
 
+Query route:
+
+- Query inputs are handled by the local query agent over `TimelyState`.
+- Query responses must include a short friendly intro plus a valid ````json UI_POPUP` block.
+- If no records match, still emit `UI_POPUP` with `query_status: "empty"`.
+- The frontend parses `UI_POPUP` and renders a quiet card/window; do not rely on plain text only for query results.
+
 ## Interaction Rules
 
 Chat:
 
 - Keep confirmations short: `已记录。6月13日 15:00，会议。`
 - Keep delete confirmations short: `已删除。6月13日 15:00，会议。`
+- Keep query intros short, then attach the `UI_POPUP` payload.
 - Use one focused clarification question at a time.
-- Avoid idle chat or proactive advice.
+- Keep general chat lightweight and avoid proactive advice.
 
 Calendar:
 

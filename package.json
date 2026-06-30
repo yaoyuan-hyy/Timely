@@ -7,16 +7,21 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "npm run test:static && npm run test:behavior",
+    "test": "npm run test:static && npm run test:behavior && npm run test:agent",
     "test:static": "node --test tests/minimax-api.test.ts tests/package-scripts.test.ts tests/static-preview.test.ts tests/ui-shell.test.ts",
     "test:behavior": "tsc tests/record-events.test.ts tests/record-input.test.ts tests/ledger-recording.test.ts tests/ledger-stats.test.ts tests/ledger-state.test.ts tests/time.test.ts tests/state.test.ts lib/event-recording.ts lib/record-input.ts lib/ledger-recording.ts lib/ledger-stats.ts lib/ledger-state.ts lib/types.ts lib/time.ts lib/state.ts --module commonjs --moduleResolution node --target ES2020 --outDir /tmp/timely-cjs --esModuleInterop --skipLibCheck --strict && node --test /tmp/timely-cjs/tests/record-events.test.js /tmp/timely-cjs/tests/record-input.test.js /tmp/timely-cjs/tests/ledger-recording.test.js /tmp/timely-cjs/tests/ledger-stats.test.js /tmp/timely-cjs/tests/ledger-state.test.js /tmp/timely-cjs/tests/time.test.js /tmp/timely-cjs/tests/state.test.js",
+    "test:agent": "tsc tests/record-workflow.test.ts tests/query-workflow.test.ts tests/app-workflow.test.ts tests/ui-popup.test.ts tests/eval-record-workflow.test.ts scripts/eval-record-workflow.ts lib/agent/record-workflow.ts lib/agent/query-workflow.ts lib/agent/app-workflow.ts lib/ui-popup.ts lib/event-recording.ts lib/record-input.ts lib/ledger-recording.ts lib/types.ts lib/time.ts lib/state.ts --module commonjs --moduleResolution node --target ES2020 --outDir .timely-test/agent-cjs --esModuleInterop --skipLibCheck --strict && node --test .timely-test/agent-cjs/tests/record-workflow.test.js .timely-test/agent-cjs/tests/query-workflow.test.js .timely-test/agent-cjs/tests/app-workflow.test.js .timely-test/agent-cjs/tests/ui-popup.test.js .timely-test/agent-cjs/tests/eval-record-workflow.test.js",
+    "eval:records": "node scripts/eval-record-workflow.mjs evals/record-input-cases.jsonl",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@langchain/core": "^1.2.0",
+    "@langchain/langgraph": "^1.4.4",
     "lucide-react": "^0.468.0",
     "next": "^14.2.0",
     "react": "^18.3.0",
-    "react-dom": "^18.3.0"
+    "react-dom": "^18.3.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

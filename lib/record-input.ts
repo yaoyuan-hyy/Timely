@@ -26,6 +26,10 @@ export function resolveRecordInput(current: TimelyState, input: string, options:
     return prepared.state;
   }
 
+  if (isEventTimePending(prepared.state.pendingClarification) && isLikelyLedgerRecord(input)) {
+    return resolveFreshRecordInput({ ...prepared.state, pendingClarification: null }, input, options);
+  }
+
   if (isLedgerPending(prepared.state.pendingClarification)) {
     if (shouldInterruptPendingLocally(input)) {
       return resolveFreshRecordInput({ ...prepared.state, pendingClarification: null }, input, options);
@@ -46,6 +50,16 @@ export function resolveRecordInputWithAi(
   const prepared = preparePendingClarification(current, input, options);
   if (prepared.handled) {
     return prepared.state;
+  }
+
+  if (isEventTimePending(prepared.state.pendingClarification) && shouldInterruptEventPendingWithAi(input, result)) {
+    const clearedState = { ...prepared.state, pendingClarification: null };
+
+    if (result.intent === "create_ledger") {
+      return resolveFreshRecordInputWithAi(clearedState, input, result, options);
+    }
+
+    return resolveFreshRecordInput(clearedState, input, options);
   }
 
   if (isLedgerPending(prepared.state.pendingClarification)) {
@@ -172,6 +186,17 @@ function isLedgerPending(pending: PendingClarification | null): pending is Extra
   { kind: "ledger_amount" | "ledger_direction" }
 > {
   return pending?.kind === "ledger_amount" || pending?.kind === "ledger_direction";
+}
+
+function isEventTimePending(pending: PendingClarification | null): pending is Extract<
+  PendingClarification,
+  { kind: "event_time" }
+> {
+  return pending?.kind === "event_time";
+}
+
+function shouldInterruptEventPendingWithAi(input: string, result: AiRecordParseResult) {
+  return result.intent === "create_ledger" || isLedgerClarificationResult(result) || isLikelyLedgerRecord(input);
 }
 
 function isCancelPendingInput(input: string) {

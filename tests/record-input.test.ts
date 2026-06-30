@@ -214,3 +214,71 @@ const now = new Date("2026-06-15T12:10:00+08:00");
   assert.equal(state.pendingClarification, null);
   assert.equal(state.messages.at(-1)?.content, "我可以帮你记录事件。");
 }
+
+{
+  const aiResult: AiRecordParseResult = {
+    intent: "create_event",
+    title: "开会",
+    startsAt: "2026-06-31T15:00:00+08:00",
+    endsAt: null,
+    location: null,
+    notes: null,
+    clarificationQuestion: null
+  };
+  const state = resolveRecordInputWithAi(emptyState(), "6月31日下午3点开会", aiResult, {
+    createId: deterministicIds(),
+    now
+  });
+
+  assert.equal(state.events.length, 0);
+  assert.equal(state.ledgerEntries.length, 0);
+  assert.equal(state.pendingClarification?.kind, "event_time");
+  assert.equal(state.messages.at(-1)?.content, "什么时候？");
+}
+
+{
+  const createId = deterministicIds();
+  const pendingState = resolveRecordInput(emptyState(), "帮我记录一个会议", {
+    createId,
+    now
+  });
+  const state = resolveRecordInput(pendingState, "今天午饭花了38", {
+    createId,
+    now: new Date("2026-06-15T12:11:00+08:00")
+  });
+
+  assert.equal(state.events.length, 0);
+  assert.equal(state.ledgerEntries.length, 1);
+  assert.equal(state.ledgerEntries[0].category, "餐饮");
+  assert.equal(state.pendingClarification, null);
+  assert.equal(state.messages.at(-1)?.content, "已记录。支出 38.00 元，餐饮。");
+}
+
+{
+  const createId = deterministicIds();
+  const pendingState = resolveRecordInput(emptyState(), "帮我记录一个会议", {
+    createId,
+    now
+  });
+  const aiResult: AiRecordParseResult = {
+    intent: "create_ledger",
+    direction: "expense",
+    amountCents: 3800,
+    currency: "CNY",
+    category: "餐饮",
+    occurredAt: null,
+    counterparty: null,
+    note: null,
+    clarificationQuestion: null
+  };
+  const state = resolveRecordInputWithAi(pendingState, "今天午饭花了38", aiResult, {
+    createId,
+    now: new Date("2026-06-15T12:11:00+08:00")
+  });
+
+  assert.equal(state.events.length, 0);
+  assert.equal(state.ledgerEntries.length, 1);
+  assert.equal(state.ledgerEntries[0].amountCents, 3800);
+  assert.equal(state.pendingClarification, null);
+  assert.equal(state.messages.at(-1)?.content, "已记录。支出 38.00 元，餐饮。");
+}

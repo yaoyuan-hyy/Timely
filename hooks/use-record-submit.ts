@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from "react";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
-import { resolveRecordInput, resolveRecordInputWithAi } from "@/lib/record-input";
 import type { AiRecordParseResult } from "@/lib/record-input";
 import type { TimelyState } from "@/lib/types";
 
@@ -32,18 +31,19 @@ export function useRecordSubmit({
       setIsSubmitting(true);
 
       try {
-        const aiResult = await requestAiRecordParse(text);
-        setState((current) => resolveRecordInputWithAi(current, text, aiResult));
-      } catch {
-        setState((current) => resolveRecordInput(current, text));
+        const now = new Date();
+        const { runTimelyAgentWorkflow } = await import("@/lib/agent/app-workflow");
+        const result = await runTimelyAgentWorkflow(state, text, {
+          now,
+          parseRecordInput: requestAiRecordParse
+        });
+        setState(result.state);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [draft, isSubmitting, setDraft, setState]
+    [draft, isSubmitting, setDraft, setState, state]
   );
-
-  void state;
 
   return {
     isSubmitting,
@@ -51,13 +51,13 @@ export function useRecordSubmit({
   };
 }
 
-async function requestAiRecordParse(input: string): Promise<AiRecordParseResult> {
+async function requestAiRecordParse(input: string, context: { now: Date }): Promise<AiRecordParseResult> {
   const response = await fetch("/api/record-input", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ input, now: new Date().toISOString() })
+    body: JSON.stringify({ input, now: context.now.toISOString() })
   });
 
   if (!response.ok) {

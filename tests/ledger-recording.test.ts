@@ -142,6 +142,29 @@ const now = new Date("2026-06-15T12:10:00+08:00");
 }
 
 {
+  const state = resolveLedgerRecordInput(emptyState(), "6月7号晚上8点买了2个抽湿机", {
+    createId: deterministicIds(),
+    now
+  });
+
+  assert.equal(state.ledgerEntries.length, 0);
+  assert.equal(state.pendingClarification?.kind, "ledger_amount");
+  assert.equal(state.messages.at(-1)?.content, "请问抽湿机花了多少钱？");
+}
+
+{
+  const state = resolveLedgerRecordInput(emptyState(), "6月7号晚上8点买了2个抽湿机花了280", {
+    createId: deterministicIds(),
+    now
+  });
+
+  assert.equal(state.pendingClarification, null);
+  assert.equal(state.ledgerEntries.length, 1);
+  assert.equal(state.ledgerEntries[0].amountCents, 28000);
+  assert.equal(state.ledgerEntries[0].note, "抽湿机");
+}
+
+{
   const aiResult: AiLedgerParseResult = {
     intent: "create_ledger",
     direction: "expense",
