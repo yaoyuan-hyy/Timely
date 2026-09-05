@@ -60,6 +60,14 @@ export function resolveEventRecordInput(
 
   const userMessage = createMessage("user", rawText, createdAt, createId);
 
+  if (current.pendingClarification?.kind === "event_title") {
+    const pending = current.pendingClarification;
+    const title = extractTitle(normalizedText);
+    if (!title) return appendAssistant(current, userMessage, "记录什么？", createdAt, createId);
+    const event = createEvent({ title, startsAt: pending.startsAt, sourceText: `${pending.sourceText} ${rawText}`, createdAt, createId });
+    return { ...current, pendingClarification: null, events: [event, ...current.events], messages: [...current.messages, userMessage, createMessage("assistant", buildRecordedReply(event), createdAt, createId)] };
+  }
+
   if (current.pendingClarification?.kind === "event_time") {
     const combinedText = normalizeText(`${current.pendingClarification.sourceText} ${rawText}`);
     const startsAt = parseDateTime(combinedText, now) ?? parseDateTime(normalizedText, now);
@@ -73,6 +81,8 @@ export function resolveEventRecordInput(
 
     const event = createEvent({
       title: current.pendingClarification.title,
+      location: current.pendingClarification.location,
+      notes: current.pendingClarification.notes,
       startsAt,
       sourceText: `${current.pendingClarification.sourceText} ${rawText}`,
       createdAt,
@@ -113,7 +123,7 @@ export function resolveEventRecordInput(
   }
 
   if (startsAt && !title) {
-    return appendAssistant(current, userMessage, "记录什么？", createdAt, createId);
+    return appendAssistant({ ...current, pendingClarification: { kind: "event_title", startsAt, sourceText: rawText, createdAt: createdAtMs } }, userMessage, "记录什么？", createdAt, createId);
   }
 
   if (isLikelyEventRecord(normalizedText)) {
@@ -142,6 +152,31 @@ export function resolveEventRecordInputWithAi(
   result: AiEventParseResult,
   options: ResolveOptions = {}
 ): TimelyState {
+  if (result.intent === "unsupported") {
+    const createdAt = toShanghaiIso(options.now ?? new Date());
+    const createId = options.createId ?? createLocalId;
+    return appendAssistant({ ...current, pendingClarification: null }, createMessage("user", input.trim(), createdAt, createId), "我可以帮你记录或查询日程和流水。", createdAt, createId);
+  }
+
+  if (result.intent === "needs_clarification") {
+    const now = options.now ?? new Date();
+    const createdAt = toShanghaiIso(now);
+    const createId = options.createId ?? createLocalId;
+    const knownStart = result.startsAt ?? parseDateTime(normalizeText(input), now);
+    const pending = result.title
+      ? { kind: "event_time" as const, title: result.title, location: result.location, notes: result.notes, sourceText: input, createdAt: now.getTime() }
+      : knownStart && isValidEventDateTime(knownStart)
+        ? { kind: "event_title" as const, startsAt: knownStart, sourceText: input, createdAt: now.getTime() }
+        : current.pendingClarification;
+    return appendAssistant({ ...current, pendingClarification: pending }, createMessage("user", input.trim(), createdAt, createId), result.clarificationQuestion ?? "记录什么？", createdAt, createId);
+  }
+
+  if (result.intent === "create_event" && result.endsAt && (!isValidEventDateTime(result.endsAt) || !result.startsAt || Date.parse(result.endsAt) <= Date.parse(result.startsAt))) {
+    const createdAt = toShanghaiIso(options.now ?? new Date());
+    const createId = options.createId ?? createLocalId;
+    return appendAssistant(current, createMessage("user", input.trim(), createdAt, createId), "结束时间需要晚于开始时间，请再说一次时间。", createdAt, createId);
+  }
+
   if (result.intent === "delete_event") {
     return resolveDeleteInput(current, input, options, {
       title: result.title,
@@ -410,8 +445,12 @@ function createMessage(
   };
 }
 
+function isTimeOnly(text: string) {
+  return /^(?:上午|早上|下午|晚上|傍晚|中午|凌晨)?(?:\d{1,2}[:：]\d{2}|(?:\d{1,2}|[零〇一二两三四五六七八九十]{1,3})点(?:半|(?:\d{1,2}|[零〇一二两三四五六七八九十]{1,3})分?)?)$/.test(text);
+}
+
 function parseDateTime(text: string, now: Date) {
-  const date = parseDate(text, now);
+  const date = parseDate(text, now) ?? (isTimeOnly(text) ? getShanghaiParts(now) : null);
   const time = parseTime(text);
 
   if (!date || !time || !isValidShanghaiDateParts(date.year, date.month, date.day)) {
@@ -436,6 +475,22 @@ function parseDeleteTarget(text: string, now: Date): DeleteTarget {
     period: parsePeriod(text),
     ordinalIndex: parseOrdinalIndex(text)
   };
+}
+
+export function parseEventDate(text: string, now: Date): DateParts | null {
+  return parseDate(text, now);
+}
+
+export function resolveEventTimeChange(text: string, original: string, now: Date): string | null {
+  const date = parseDate(text, now);
+  const time = parseTime(text);
+  // Do not turn an unrecognized date expression into the original day.
+  if (!date && !isTimeOnly(text)) return null;
+  const parts = getShanghaiParts(new Date(original));
+  const nextDate = date ?? parts;
+  const nextTime = time ?? parts;
+  return isValidShanghaiDateParts(nextDate.year, nextDate.month, nextDate.day)
+    ? buildShanghaiIso(nextDate.year, nextDate.month, nextDate.day, nextTime.hour, nextTime.minute) : null;
 }
 
 function parseDate(text: string, now: Date): DateParts | null {
@@ -484,6 +539,10 @@ function parseDate(text: string, now: Date): DateParts | null {
 
     return shiftMonthDate(current, relativeMonthOffset(relativeMonthDay[1]), day);
   }
+
+  if (/大后天/.test(text)) return addDays(current, 3);
+  if (/后天/.test(text)) return addDays(current, 2);
+  if (/前天/.test(text)) return addDays(current, -2);
 
   if (/今天/.test(text)) {
     return current;
@@ -597,7 +656,7 @@ function extractTitle(text: string) {
     .replace(/(?:今年|明年|去年)?\d{1,2}月\s*\d{1,2}[日号]?/g, "")
     .replace(/(?:上个月|上月|这个月|本月|下个月|下月)(?:[零〇一二两三四五六七八九十]{1,3}|\d{1,2})[日号]/g, "")
     .replace(/(上|下|这|本)?(?:周|星期|礼拜)[日天一二三四五六]/g, "")
-    .replace(/今天|明天|昨天/g, "")
+    .replace(/大后天|后天|前天|今天|明天|昨天/g, "")
     .replace(/(?:上午|早上|下午|晚上|傍晚|中午)?\d{1,2}[:：][0-5]\d/g, "")
     .replace(/(?:上午|早上|下午|晚上|傍晚|中午)?\d{1,2}点(?:半|\d{1,2}分?)?/g, "")
     .replace(/(?:上午|早上|下午|晚上|傍晚|中午)?[零〇一二两三四五六七八九十]{1,3}点(?:半|[零〇一二两三四五六七八九十]{1,3}分?)?/g, "")

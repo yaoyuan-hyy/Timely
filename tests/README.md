@@ -1,3 +1,14 @@
+# 当前测试入口（2026-09-05）
+
+- `npm test`：结构、业务、workflow 全部回归，无真实模型请求。
+- `tests/ai-api.test.ts`：路由兼容与配置契约。
+- `tests/ai-parser.test.ts`：mock HTTP 验证 DeepSeek 请求、澄清保留及日期校验。
+- `tests/app-workflow.test.ts`：入口路由、时间/金额/标题追问、草稿传递。
+- `tests/state-commit.test.ts`：在途请求不覆盖并发操作，不复活已删除事件。
+- `npm run test:ai`：启动 Next 服务、配置 `.env.local` 后运行，调用真实 DeepSeek，测试输入不落库。
+
+以下为早期测试说明；其中 MiniMax 适配器已由 DeepSeek 替换。
+
 # Timely 测试说明
 
 本文档说明当前 `tests/` 目录里的测试覆盖范围、重点场景和运行方式。
@@ -13,7 +24,7 @@
 - `ledger-stats.test.ts`
 - `time.test.ts`
 - `state.test.ts`
-- `minimax-api.test.ts`
+- `ai-api.test.ts`
 - `package-scripts.test.ts`
 - `ui-shell.test.ts`
 - `record-workflow.test.ts`
@@ -126,13 +137,13 @@
 
 - `我可以帮你记录事件。`
 
-## 2. `minimax-api.test.ts`
+## 2. `ai-api.test.ts`
 
 这个测试不调用真实网络 API。
 
 它读取：
 
-- `lib/ai/minimax-event-parser.ts`
+- `server/ai/deepseek-record-parser.ts`
 - `app/api/record-event/route.ts`
 
 然后验证 MiniMax 接入的关键内容是否存在。
@@ -254,7 +265,7 @@ node --test tests/ui-shell.test.ts
 ### 运行 MiniMax 接入结构测试
 
 ```bash
-node --test tests/minimax-api.test.ts
+node --test tests/ai-api.test.ts
 ```
 
 ### 运行事件行为测试
@@ -351,3 +362,8 @@ curl -sS -X POST http://localhost:3004/api/record-event \
 - 更丰富的账目记录测试。
 - 真实语音输入接入后的端到端测试。
 - 用 Playwright 做日历 UI 的真实点击和可视化回归测试。
+# 可信记录体验测试（2026-09-06）
+
+`npm run test:experience` 已加入 `npm test`，覆盖未确认不入库、单条提交与并发保留、自然语言修改和歧义选择、混合最近记录/搜索、上海时区跳转、重复提示候选、AI 失败降级和版本化备份合并。`tests/ai-parser.test.ts` 单独约束服务端请求和结果校验。
+
+`npm run test:ai` 需要已运行的本地服务与 `.env.local` 中真实凭据，校验合成输入的语义结果，不写浏览器数据。可用 `TIMELY_TEST_URL` 指定本机服务地址。所有文档中的 live 结果均应区分当次检查与历史记录。

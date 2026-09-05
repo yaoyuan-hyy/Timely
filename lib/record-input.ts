@@ -67,9 +67,18 @@ export function resolveRecordInputWithAi(
       return resolveFreshRecordInputWithAi({ ...prepared.state, pendingClarification: null }, input, result, options);
     }
 
+    if (result.intent === "create_ledger") {
+      return resolveLedgerRecordInputWithAi(prepared.state, input, result, options);
+    }
+    if (isLedgerClarificationResult(result)) {
+      return resolveFreshRecordInputWithAi(prepared.state, input, result, options);
+    }
     return resolveLedgerRecordInput(prepared.state, input, options);
   }
 
+  if (prepared.state.pendingClarification && result.intent === "unsupported") {
+    return resolveRecordInput(prepared.state, input, options);
+  }
   return resolveFreshRecordInputWithAi(prepared.state, input, result, options);
 }
 
@@ -92,7 +101,14 @@ function resolveFreshRecordInputWithAi(
   }
 
   if (isLedgerClarificationResult(result)) {
-    return resolveLedgerRecordInput(current, input, options);
+    const now = options.now ?? new Date();
+    const createdAt = toShanghaiIso(now);
+    const createId = options.createId ?? createLocalId;
+    const common = { category: result.category || "未分类", occurredAt: result.occurredAt || createdAt, counterparty: result.counterparty, note: result.note, sourceText: input, createdAt: now.getTime() };
+    const pending: PendingClarification = result.clarificationQuestion === "这是收入还是支出？" && result.amountCents
+      ? { ...common, kind: "ledger_direction", amountCents: result.amountCents }
+      : { ...common, kind: "ledger_amount", direction: result.direction };
+    return { ...current, pendingClarification: pending, messages: [...current.messages, createMessage("user", input.trim(), createdAt, createId), createMessage("assistant", result.clarificationQuestion, createdAt, createId)] };
   }
 
   return resolveEventRecordInputWithAi(current, input, result, options);
@@ -165,7 +181,7 @@ function appendPendingCancelReply(current: TimelyState, input: string, options: 
   return {
     ...current,
     pendingClarification: null,
-    messages: [...current.messages, userMessage, createMessage("assistant", "好的一声，已取消当前记录。", createdAt, createId)]
+    messages: [...current.messages, userMessage, createMessage("assistant", "好的，已取消当前记录。", createdAt, createId)]
   };
 }
 
@@ -174,7 +190,8 @@ function shouldInterruptPendingWithAi(input: string, result: AiRecordParseResult
     return false;
   }
 
-  return result.intent === "create_event" || result.intent === "delete_event" || isLikelyEventInterruptInput(input);
+  return result.intent === "create_event" || result.intent === "delete_event" ||
+    (result.intent === "create_ledger" && (isLikelyLedgerRecord(input) || /今天|昨天|前天|明天|后天|[月日号]/.test(input))) || isLikelyEventInterruptInput(input);
 }
 
 function shouldInterruptPendingLocally(input: string) {
@@ -208,7 +225,7 @@ function isShortPendingAnswer(input: string) {
 
   return (
     text.length <= 12 &&
-    (/^(?:¥|￥)?\d+(?:\.\d{1,2})?(?:元|块钱|块|人民币)?$/.test(text) ||
+    (/^(?:花了?|付了?|支付)?(?:¥|￥)?(?:\d+(?:\.\d{1,2})?|[零〇一二两三四五六七八九十百千万]+)(?:元|块钱|块|人民币)?$/.test(text) ||
       /^(收入|支出|进账|入账|出账|花销)$/.test(text))
   );
 }

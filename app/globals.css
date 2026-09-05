@@ -24,6 +24,19 @@
   --motion-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.record-confirmation {
+  margin: 0 0 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface, #fffaf2);
+  box-shadow: 0 8px 24px rgba(74, 67, 57, 0.08);
+}
+
+.record-confirmation p { margin: 0 0 10px; color: var(--ink, #4b463f); }
+.record-confirmation div { display: flex; gap: 8px; }
+.record-confirmation button { border: 0; border-radius: 12px; padding: 8px 12px; cursor: pointer; }
+.record-confirmation button:first-child { background: var(--sage, #b8c8b0); color: #334033; }
+
 * {
   box-sizing: border-box;
 }
@@ -294,8 +307,40 @@ input:focus-visible,
 }
 
 .chat-view {
-  grid-template-rows: minmax(0, 1fr) auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
 }
+
+.chat-view .message-list { flex: 1 1 160px; min-height: 120px; }
+.chat-view .home-prompt { flex: 1 1 160px; padding: 20px 10px; }
+.chat-view .composer-shell { flex: 0 0 auto; order: 10; }
+.chat-view > :not(.message-list):not(.home-prompt) { flex-shrink: 0; }
+.quiet-copy { color: var(--muted); font-size: 13px; line-height: 1.65; margin: 8px 0; }
+.recent-records { order: 1; padding: 12px 14px; border-radius: 22px; background: var(--surface); }
+.recent-records summary { cursor: pointer; font-size: 14px; font-weight: 600; }
+.recent-records input { width: 100%; margin: 12px 0 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--shell); color: var(--text); }
+.recent-record-list { max-height: 180px; overflow-y: auto; display: grid; gap: 6px; }
+.recent-record { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 8px; padding: 10px 4px; text-align: left; color: var(--text); background: transparent; line-height: 1.5; overflow-wrap: anywhere; }
+.recent-record small { color: var(--muted); }
+.record-confirmation, .record-notice { order: 2; overflow-wrap: anywhere; }
+.record-confirmation div, .record-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.record-actions button, .backup-file, .record-notice button, .query-popup-card button { min-height: 40px; padding: 8px 12px; border-radius: 14px; background: var(--blue-soft); color: var(--text); cursor: pointer; }
+.record-confirmation button { min-height: 44px; }
+.record-notice { font-size: 13px; padding: 12px; background: var(--surface-muted); border-radius: 18px; }
+.record-notice p { margin: 0 0 8px; }
+.record-highlight { border-radius: 18px; box-shadow: 0 0 0 2px var(--blue-strong); scroll-margin-block: 20px; }
+.settings-view { display: flex; flex-direction: column; overflow-y: auto; }
+.settings-view > * { flex-shrink: 0; }
+.settings-view .settings-list { overflow: visible; }
+.data-transfer { padding: 18px; border-radius: 24px; background: var(--surface); }
+.data-transfer h3 { margin-top: 0; }
+.storage-error { position: absolute; z-index: 5; top: 0; left: 22px; right: 22px; padding: 12px; border-radius: 16px; background: var(--danger-soft); color: var(--text); font-size: 13px; }
+.backup-file { position: relative; display: inline-flex; align-items: center; font-size: 14px; }
+.backup-file input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.backup-file:focus-within { box-shadow: var(--focus-ring); }
+.import-preview { margin-top: 12px; font-size: 14px; line-height: 1.6; }
 
 .home-prompt {
   min-height: 0;
@@ -607,7 +652,7 @@ input:focus-visible,
 .composer {
   min-height: 74px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 56px;
+  grid-template-columns: minmax(0, 1fr) 36px 56px;
   align-items: center;
   gap: 10px;
   padding: 8px 10px 8px 22px;
@@ -633,6 +678,9 @@ input:focus-visible,
 .composer input::placeholder {
   color: #9a9287;
 }
+
+.send-action { width: 36px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 12px; color: var(--blue-strong); background: transparent; }
+.send-action:disabled { opacity: 0.4; }
 
 .voice-action {
   position: relative;

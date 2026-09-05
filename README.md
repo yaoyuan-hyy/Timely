@@ -6,11 +6,13 @@ The product is not a reminder app, planning app, task manager, focus timer, or p
 
 ```text
 Natural-language input
+  -> local correction / relative-reference resolution
   -> LangGraph supervisor agent
   -> write agent or query agent
   -> optional AI unified parse for writes, with local fallback
   -> local query over TimelyState for personal-data questions
-  -> write TimelyState
+  -> preview a single event/ledger draft
+  -> confirm to commit that record into TimelyState
   -> persist in localStorage
   -> events appear in calendar/timeline views; ledger entries appear in the ledger view; query results open UI cards
 ```
@@ -21,7 +23,7 @@ Natural-language input
 - React 18
 - TypeScript
 - LangGraph JS (`@langchain/langgraph`) for the supervisor/write/query workflows
-- Zod for eval dataset validation
+- Zod for AI result and eval dataset validation
 - Plain CSS in `app/globals.css`
 - `lucide-react` icons
 - Browser `localStorage` under `timely-event-record-state-v1`
@@ -31,7 +33,9 @@ Natural-language input
 Install and run:
 
 ```bash
-npm install
+npm ci
+cp .env.example .env.local
+# Fill DEEPSEEK_API_KEY in .env.local, then:
 npm run dev
 ```
 
@@ -41,8 +45,18 @@ Then open:
 http://localhost:3000
 ```
 
+The server uses `deepseek-v4-flash` at `https://api.deepseek.com/chat/completions`.
+Set `DEEPSEEK_API_KEY` in `.env.local`; `DEEPSEEK_BASE_URL` and `DEEPSEEK_MODEL` are optional overrides. Restart the dev server after changing environment variables. Existing `OPENAI_*` / `MINIMAX_*` variables no longer configure this app.
+
+With the server running, `npm run test:ai` checks real event, ledger, and clarification parsing (four API requests). This is separate from `npm test`, which uses mocked HTTP and requires no token. These checks parse sample inputs without writing browser records.
+
 ## Current App
 
+- Creation and correction show a preview before saving; confirm, edit/re-enter, or cancel. Event cancellations retain their existing recoverable behavior.
+- Local corrections support `刚才那条改到下午四点`, `上一笔改成58元`, `会议地点改成公司`, and `不是支出，是收入`. Ambiguous matches ask for a numbered selection or a date/time.
+- Chat includes mixed recent records and search. Search and query cards open the relevant Shanghai calendar day or ledger month.
+- Possible duplicate records show a warning with an explicit “仍然保存” action. AI failures show local fallback and allow retry with the original input/context.
+- Settings exports versioned JSON backups and previews imports before merging. Same-ID conflicts preserve current records. Backups include events (including cancelled events) and ledger entries, excluding chat and unconfirmed work.
 - Mobile-first Timely app shell.
 - Four views: Chat, Records, Ledger, Settings.
 - Natural-language event creation and deletion through `/api/record-input`, with local fallback.
@@ -54,6 +68,8 @@ http://localhost:3000
 - `public/app.js` is a static preview/compatibility surface, not the long-term business implementation.
 
 ## Multi-Agent Workflow
+
+The UI first calls `lib/record-session.ts` for local edit resolution and fallback metadata. Existing workflows return proposals; `lib/record-draft.ts` stages a single record without saving it. Confirmation validates and commits only that record, preserving concurrent manual edits. Pending confirmations and edit selections are session-only and are cleared on reload; existing missing-field clarification remains compatible.
 
 Timely now uses a LangGraph supervisor workflow in `lib/agent/app-workflow.ts`. It classifies each input and routes it to one of three agents:
 
@@ -157,6 +173,18 @@ npm run build
 ## Product Docs
 
 - `AGENTS.md`: operating standard for agents working on Timely
-- `progress.md`: current progress, known issues, and suggested next steps
-- `PRD.md`: product requirements
-- `ARCHITECTURE.md`: architecture notes
+- `docs/progress.md`: current progress, known issues, and suggested next steps
+- `docs/product/PRD.md`: product requirements
+- `docs/architecture/ARCHITECTURE.md`: architecture notes
+- `docs/plans/IMPLEMENTATION_PLAN.md`: historical implementation plan
+
+## Project Layout
+
+- `app/`, `components/`, `hooks/`: browser UI and client interactions
+- `lib/`: shared domain, state, time, and validation logic
+- `server/`: server-only AI provider adapters; these modules read API credentials
+- `app/api/`: thin Next.js HTTP boundaries that call server adapters
+- `docs/`: product, architecture, plan, deployment, and progress documentation
+- `tests/`, `scripts/`, `evals/`: verification and evaluation tooling
+
+The browser never receives `DEEPSEEK_API_KEY`. AI calls stay behind the Next.js API routes; shared domain code remains provider-agnostic so local fallback and tests do not depend on a network request.

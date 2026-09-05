@@ -110,6 +110,7 @@ export function resolveLedgerRecordInputWithAi(
   result: AiLedgerParseResult,
   options: ResolveOptions = {}
 ): TimelyState {
+  const pending = current.pendingClarification?.kind === "ledger_amount" || current.pendingClarification?.kind === "ledger_direction" ? current.pendingClarification : null;
   const contextualAmountCents = parseAmountCents(normalizeText(input));
 
   if (
@@ -118,8 +119,8 @@ export function resolveLedgerRecordInputWithAi(
     typeof result.amountCents !== "number" ||
     !Number.isSafeInteger(result.amountCents) ||
     result.amountCents <= 0 ||
-    contextualAmountCents === null ||
-    contextualAmountCents !== result.amountCents
+    (!pending && contextualAmountCents === null) ||
+    (contextualAmountCents !== null && contextualAmountCents !== result.amountCents)
   ) {
     return resolveLedgerRecordInput(current, input, options);
   }
@@ -133,10 +134,10 @@ export function resolveLedgerRecordInputWithAi(
     {
       direction: result.direction,
       amountCents: result.amountCents,
-      category: result.category || "未分类",
-      occurredAt: result.occurredAt || toShanghaiIso(now),
-      counterparty: result.counterparty,
-      note: result.note
+      category: result.category || pending?.category || "未分类",
+      occurredAt: pending?.occurredAt || result.occurredAt || toShanghaiIso(now),
+      counterparty: result.counterparty ?? pending?.counterparty ?? null,
+      note: result.note ?? pending?.note ?? null
     },
     rawText,
     createdAt,

@@ -1,22 +1,25 @@
 "use client";
 
 import { CalendarDays, Clock3, MessageCircle, ReceiptText, RefreshCcw, ShieldCheck } from "lucide-react";
+import type { ReactNode } from "react";
 
 export function SettingsView({
   eventCount,
   cancelledCount,
   ledgerCount,
   hasPendingClarification,
-  onReset
+  onReset,
+  children
 }: {
   eventCount: number;
   cancelledCount: number;
   ledgerCount: number;
   hasPendingClarification: boolean;
   onReset: () => void;
+  children?: ReactNode;
 }) {
   return (
-    <div className="view-stack">
+    <div className="view-stack settings-view">
       <div className="section-head">
         <div>
           <p className="eyebrow">Settings</p>
@@ -63,6 +66,7 @@ export function SettingsView({
         </article>
       </div>
 
+      {children}
       <button className="reset-button" type="button" onClick={onReset}>
         <RefreshCcw size={17} />
         重置示例记录

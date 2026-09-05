@@ -147,7 +147,7 @@ const now = new Date("2026-06-15T12:10:00+08:00");
   assert.equal(state.events.length, 0);
   assert.equal(state.ledgerEntries.length, 0);
   assert.equal(state.pendingClarification, null);
-  assert.equal(state.messages.at(-1)?.content, "好的一声，已取消当前记录。");
+  assert.equal(state.messages.at(-1)?.content, "好的，已取消当前记录。");
 }
 
 {
@@ -281,4 +281,66 @@ const now = new Date("2026-06-15T12:10:00+08:00");
   assert.equal(state.ledgerEntries[0].amountCents, 3800);
   assert.equal(state.pendingClarification, null);
   assert.equal(state.messages.at(-1)?.content, "已记录。支出 38.00 元，餐饮。");
+}
+
+{
+  const result = resolveRecordInputWithAi(emptyState(), "陪小王散步", {
+    intent: "needs_clarification", title: "陪小王散步", startsAt: null,
+    endsAt: null, location: "公园", notes: null, targetDate: null,
+    clarificationQuestion: "什么时候？"
+  }, { now });
+  assert.equal(result.pendingClarification?.kind, "event_time");
+  assert.equal(result.messages.at(-1)?.content, "什么时候？");
+}
+
+{
+  const result = resolveRecordInputWithAi(emptyState(), "买了个抽湿机", {
+    intent: "needs_clarification", direction: "expense", amountCents: null,
+    currency: "CNY", category: "家电", occurredAt: "2026-05-07T12:10:00+08:00",
+    counterparty: null, note: "抽湿机", clarificationQuestion: "金额是多少？"
+  }, { now });
+  assert.equal(result.pendingClarification?.kind, "ledger_amount");
+  if (result.pendingClarification?.kind === "ledger_amount") {
+    assert.equal(result.pendingClarification.category, "家电");
+    assert.equal(result.pendingClarification.occurredAt, "2026-05-07T12:10:00+08:00");
+  }
+}
+
+{
+  const result = resolveRecordInputWithAi(emptyState(), "明天三点不去开会", {
+    intent: "unsupported", title: null, startsAt: null, endsAt: null,
+    location: null, notes: null, targetDate: null, clarificationQuestion: null
+  }, { now });
+  assert.equal(result.events.length, 0, "unsupported AI results must not fall back to a guessed write");
+}
+
+{
+  const pending = resolveRecordInput(emptyState(), "买了个抽湿机", { now });
+  const result = resolveRecordInputWithAi(pending, "六百块", {
+    intent: "create_ledger", direction: "expense", amountCents: 60000, currency: "CNY",
+    category: "购物", occurredAt: "2026-06-15T12:10:00+08:00", counterparty: null,
+    note: "抽湿机", clarificationQuestion: null
+  }, { now });
+  assert.equal(result.ledgerEntries[0]?.amountCents, 60000);
+  assert.equal(result.pendingClarification, null);
+}
+
+{
+  const first = resolveRecordInputWithAi(emptyState(), "明天下午三点", {
+    intent: "needs_clarification", title: null, startsAt: null, endsAt: null,
+    location: null, notes: null, targetDate: null, clarificationQuestion: "记录什么？"
+  }, { now });
+  const second = resolveRecordInput(first, "看牙", { now });
+  assert.equal(second.events[0]?.startsAt, "2026-06-16T15:00:00+08:00", "preserve explicit input time even if AI omits it in a clarification");
+}
+
+{
+  const pending = resolveRecordInput(emptyState(), "上个月7号买了抽湿机", { now });
+  const result = resolveRecordInputWithAi(pending, "今天午饭花了38", {
+    intent: "create_ledger", direction: "expense", amountCents: 3800, currency: "CNY",
+    category: "餐饮", occurredAt: "2026-06-15T12:10:00+08:00", counterparty: null,
+    note: null, clarificationQuestion: null
+  }, { now });
+  assert.equal(result.ledgerEntries[0]?.occurredAt, "2026-06-15T12:10:00+08:00");
+  assert.equal(result.ledgerEntries[0]?.note, null);
 }

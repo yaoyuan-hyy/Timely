@@ -51,15 +51,19 @@ export function LedgerView({
   entries,
   onDeleteEntry,
   onUpdateEntry,
-  onAddEntry
+  onAddEntry,
+  initialMonthKey,
+  focusedRecordId
 }: {
   entries: LedgerEntry[];
   onDeleteEntry: (entryId: string) => void;
   onUpdateEntry: (entryId: string, update: LedgerEntryDraftUpdate) => void;
   onAddEntry: (entry: LedgerEntryManualCreate) => void;
+  initialMonthKey?: string;
+  focusedRecordId?: string;
 }) {
   const [ledgerMode, setLedgerMode] = useState<LedgerMode>("month");
-  const [selectedMonthDate, setSelectedMonthDate] = useState(() => getCurrentShanghaiMonthDate());
+  const [selectedMonthDate, setSelectedMonthDate] = useState(() => initialMonthKey ? new Date(Number(initialMonthKey.slice(0, 4)), Number(initialMonthKey.slice(5, 7)) - 1, 1) : getCurrentShanghaiMonthDate());
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const [selectedLedgerEntry, setSelectedLedgerEntry] = useState<LedgerEntry | null>(null);
   const [amountDraft, setAmountDraft] = useState("");
@@ -258,12 +262,12 @@ export function LedgerView({
               </div>
               <div className="ledger-day-entries">
                 {group.entries.map((entry) => (
-                  <LedgerEntryRow
+                  <div key={entry.id} className={focusedRecordId === entry.id ? "record-highlight" : undefined}><LedgerEntryRow
                     entry={entry}
                     key={entry.id}
                     onDelete={handleDeleteEntry}
                     onOpen={openLedgerEditor}
-                  />
+                  /></div>
                 ))}
               </div>
             </section>

@@ -55,9 +55,9 @@
 
 **Files:**
 - Create: `app/api/record-input/route.ts`
-- Create: `lib/ai/minimax-record-parser.ts`
+- Create: `server/ai/deepseek-record-parser.ts` (historical plan; implementation now uses DeepSeek)
 - Modify: `components/timely-app.tsx`
-- Modify: `tests/minimax-api.test.ts`
+- Modify: `tests/ai-api.test.ts`
 
 - [ ] Add `AiRecordParseResult` union with `create_ledger`.
 - [ ] Keep `/api/record-event` intact for compatibility.
@@ -85,7 +85,7 @@
 ### Task 6: Documentation And Verification
 
 **Files:**
-- Modify: `progress.md`
+- Modify: `docs/progress.md`
 
 - [ ] Document ledger records as an independent record type in the current implementation.
 - [ ] Run focused tests after each task.

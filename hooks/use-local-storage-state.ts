@@ -13,6 +13,7 @@ export function useLocalStorageState<T>(
 ) {
   const [value, setValue] = useState<T>(fallback);
   const [isReady, setIsReady] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -32,8 +33,13 @@ export function useLocalStorageState<T>(
       return;
     }
 
-    window.localStorage.setItem(key, JSON.stringify(value));
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+      setStorageError(null);
+    } catch {
+      setStorageError("浏览器未能保存最新记录，请先到设置导出备份，暂时不要关闭页面。");
+    }
   }, [isReady, key, value]);
 
-  return [value, setValue, isReady] as const;
+  return [value, setValue, isReady, storageError] as const;
 }

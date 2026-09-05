@@ -54,7 +54,7 @@ export function createTimelyAgentWorkflow(options: TimelyAgentOptions = {}) {
     const normalizedInput = normalizeText(state.input);
     return {
       normalizedInput,
-      agent: selectAgent(normalizedInput),
+      agent: selectAgent(normalizedInput, state.currentState, Boolean(options.parseRecordInput)),
       trace: ["classify_intent" as const]
     };
   }
@@ -151,12 +151,13 @@ function routeByAgent(state: TimelyAgentWorkflowState) {
   return `${state.agent ?? "chat"}_agent`;
 }
 
-function selectAgent(input: string): TimelyAgentName {
+function selectAgent(input: string, current: TimelyState, hasAi: boolean): TimelyAgentName {
+  if (current.pendingClarification && !isLikelyQueryIntent(input)) return "write";
   if (isLikelyQueryIntent(input)) {
     return "query";
   }
 
-  if (isLikelyWriteIntent(input)) {
+  if (isLikelyWriteIntent(input) || hasAi) {
     return "write";
   }
 

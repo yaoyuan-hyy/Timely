@@ -1,5 +1,6 @@
+import { normalizePendingClarification } from "@/lib/state";
 import { NextResponse } from "next/server";
-import { parseMiniMaxRecordInput } from "@/lib/ai/minimax-record-parser";
+import { parseDeepSeekRecordInput } from "@/server/ai/deepseek-record-parser";
 
 export async function POST(request: Request) {
   let payload: unknown;
@@ -17,10 +18,10 @@ export async function POST(request: Request) {
   const now = typeof payload.now === "string" ? parseRequestNow(payload.now) : undefined;
 
   try {
-    const result = await parseMiniMaxRecordInput(payload.input.trim(), { now });
+    const result = await parseDeepSeekRecordInput(payload.input.trim(), { now, pendingClarification: normalizePendingClarification(payload.pendingClarification) });
     return NextResponse.json({ result });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "MiniMax API 调用失败。";
+    const message = error instanceof Error ? error.message : "DeepSeek API 调用失败。";
     const status = getErrorStatus(error, message);
     return NextResponse.json({ error: message }, { status });
   }

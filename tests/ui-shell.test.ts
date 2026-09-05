@@ -15,6 +15,7 @@ const hooks = [
   readFileSync("hooks/use-timely-actions.ts", "utf8")
 ].join("\n");
 const agentSurface = [
+  readFileSync("lib/record-session.ts", "utf8"),
   readFileSync("lib/agent/record-workflow.ts", "utf8"),
   readFileSync("lib/ui-popup.ts", "utf8")
 ].join("\n");
@@ -42,6 +43,12 @@ assert.match(component, /showCancelledRecords &&/);
 assert.match(component, /className=\{`drawer-backdrop/);
 assert.match(component, /className=\{`side-drawer/);
 assert.match(component, /className="composer-shell"/);
+assert.match(component, /onEditPending/);
+assert.match(component, /仍然保存/);
+assert.match(component, /重试 AI 识别/);
+assert.match(component, /initialDayKey/);
+assert.match(component, /initialMonthKey/);
+assert.doesNotMatch(hooks, /proposedState/);
 assert.match(component, /className="voice-action"/);
 assert.match(component, /className="voice-action-core"/);
 assert.match(appSurface, /\/api\/record-input/);

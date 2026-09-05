@@ -1,26 +1,52 @@
 "use client";
 
-import { CalendarDays, Mic, ReceiptText, Sparkles, X } from "lucide-react";
+import { CalendarDays, Mic, ReceiptText, Send, Sparkles, X } from "lucide-react";
 import type { FormEvent } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatMessageTime } from "@/lib/time";
+import { recordTarget } from "@/lib/recent-records";
+import { RecentRecords } from "./recent-records";
 import { extractUiPopupFromMessage, stripUiPopupBlock } from "@/lib/ui-popup";
-import type { ConversationMessage } from "@/lib/types";
+import type { ConversationMessage, PendingConfirmation, RecordTarget, TimelyState } from "@/lib/types";
 
 export function ChatView({
   messages,
+  submitError,
   draft,
   setDraft,
   isSubmitting,
-  onSubmit
+  onSubmit,
+  pendingConfirmation,
+  onConfirmPending,
+  onDiscardPending,
+  onEditPending,
+  fallbackNotice,
+  onRetry,
+  possibleDuplicate,
+  state,
+  onOpenRecord
 }: {
   messages: ConversationMessage[];
+  submitError?: string | null;
   draft: string;
   setDraft: (value: string) => void;
   isSubmitting: boolean;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  pendingConfirmation?: PendingConfirmation | null;
+  onConfirmPending?: () => void;
+  onDiscardPending?: () => void;
+  onEditPending: () => void;
+  fallbackNotice: string | null;
+  onRetry: () => void;
+  possibleDuplicate: boolean;
+  state: TimelyState;
+  onOpenRecord: (target: RecordTarget) => void;
 }) {
   const hasConversation = messages.length > 0;
+  const messageList = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (messageList.current) messageList.current.scrollTop = messageList.current.scrollHeight;
+  }, [messages.length]);
   const [closedPopupMessageId, setClosedPopupMessageId] = useState<string | null>(null);
   const latestPopup = useMemo(() => findLatestPopup(messages), [messages]);
   const activePopup = latestPopup && latestPopup.messageId !== closedPopupMessageId ? latestPopup : null;
@@ -28,7 +54,7 @@ export function ChatView({
   return (
     <div className="view-stack chat-view">
       {hasConversation ? (
-        <div className="message-list" aria-live="polite">
+        <div className="message-list" aria-live="polite" ref={messageList}>
           {messages.map((message) => {
             const visibleContent = stripUiPopupBlock(message.content);
 
@@ -47,15 +73,30 @@ export function ChatView({
         </section>
       )}
 
+      {submitError && <p role="alert">{submitError}</p>}
+      {fallbackNotice && <div className="record-notice" role="status"><p>{fallbackNotice}</p><button type="button" disabled={isSubmitting} onClick={onRetry}>重试 AI 识别</button></div>}
+      {state.pendingClarification && <p className="quiet-copy" role="status">正在补充上一条记录，请回答刚才的问题。</p>}
+      {pendingConfirmation && (
+        <section className="record-confirmation" aria-label="确认记录">
+          <p>{pendingConfirmation.before ? "准备修改" : "准备记录"}：{pendingConfirmation.summary}</p>
+          {possibleDuplicate && <p role="status">已有相同时间和内容的记录，仍要保存一条吗？</p>}
+          <div>
+            <button type="button" disabled={isSubmitting} onClick={onConfirmPending}>{possibleDuplicate ? "仍然保存" : pendingConfirmation.before ? "确认修改" : "确认记录"}</button>
+            <button type="button" disabled={isSubmitting} onClick={onEditPending}>修改</button>
+            <button type="button" onClick={onDiscardPending}>取消</button>
+          </div>
+        </section>
+      )}
       <form className="composer-shell" onSubmit={onSubmit}>
         <div className="composer">
           <input
             aria-label="输入要记录的内容"
             placeholder={isSubmitting ? "正在记录..." : "记录日程或流水..."}
             value={draft}
-            disabled={isSubmitting}
+            disabled={isSubmitting || Boolean(pendingConfirmation)}
             onChange={(event) => setDraft(event.target.value)}
           />
+          <button className="send-action" type="submit" aria-label="发送" disabled={isSubmitting || Boolean(pendingConfirmation) || !draft.trim()}><Send size={18} /></button>
           <button
             className="voice-action"
             type="button"
@@ -70,6 +111,7 @@ export function ChatView({
           </button>
         </div>
       </form>
+      {!pendingConfirmation && <RecentRecords state={state} onOpen={onOpenRecord} />}
 
       {activePopup && (
         <div className="query-popup-backdrop" role="presentation">
@@ -115,6 +157,7 @@ export function ChatView({
                     <strong>{event.title}</strong>
                     <span>{formatMessageTime(event.startsAt)}</span>
                     {event.location && <small>{event.location}</small>}
+                    <button type="button" onClick={() => onOpenRecord(recordTarget("event", event.id, event.startsAt))}>在日历中查看</button>
                   </article>
                 ))}
               </div>
@@ -131,6 +174,7 @@ export function ChatView({
                     <strong>{entry.category}</strong>
                     <span>{entry.direction === "income" ? "+" : "-"}{formatAmount(entry.amountCents)} 元</span>
                     {entry.note && <small>{entry.note}</small>}
+                    <button type="button" onClick={() => onOpenRecord(recordTarget("ledger", entry.id, entry.occurredAt))}>在流水中查看</button>
                   </article>
                 ))}
               </div>

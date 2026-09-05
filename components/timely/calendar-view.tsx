@@ -15,7 +15,9 @@ export function CalendarView({
   showCancelledRecords,
   onCancel,
   onRestore,
-  onPermanentDelete
+  onPermanentDelete,
+  initialDayKey,
+  focusedRecordId
 }: {
   events: CalendarEvent[];
   cancelledEvents: CalendarEvent[];
@@ -23,9 +25,11 @@ export function CalendarView({
   onCancel: (eventId: string) => void;
   onRestore: (eventId: string) => void;
   onPermanentDelete: (eventId: string) => void;
+  initialDayKey?: string;
+  focusedRecordId?: string;
 }) {
-  const [monthDate, setMonthDate] = useState(() => startOfMonth(new Date()));
-  const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
+  const [monthDate, setMonthDate] = useState(() => startOfMonth(initialDayKey ? dateFromDayKey(initialDayKey) : new Date()));
+  const [selectedDayKey, setSelectedDayKey] = useState<string | null>(initialDayKey ?? null);
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const calendarDays = useMemo(() => buildMonthDays(monthDate, events), [events, monthDate]);
@@ -102,11 +106,11 @@ export function CalendarView({
                   <time>{String(hour).padStart(2, "0")}:00</time>
                   <div className="timeline-lane">
                     {hourEvents.map((event) => (
-                      <article className="timeline-event" key={event.id}>
+                      <article className={`timeline-event ${focusedRecordId === event.id ? "record-highlight" : ""}`} key={event.id}>
                         <div>
                           <h3>{event.title}</h3>
                           <p>
-                            {formatTime(event.startsAt)} - {formatTime(event.endsAt ?? addHoursIso(event.startsAt, 1))}
+                            {formatTime(event.startsAt)}{event.endsAt ? ` - ${formatTime(event.endsAt)}` : ""}
                           </p>
                         </div>
                         <button
@@ -332,8 +336,4 @@ function toLocalDayKey(date: Date) {
 function dateFromDayKey(key: string) {
   const [year, month, day] = key.split("-").map(Number);
   return new Date(year, month - 1, day);
-}
-
-function addHoursIso(iso: string, hours: number) {
-  return new Date(new Date(iso).getTime() + hours * 60 * 60 * 1000).toISOString();
 }

@@ -56,7 +56,15 @@ export type ConversationMessage = {
 
 export type PendingClarification =
   | {
+      kind: "event_title";
+      startsAt: string;
+      sourceText: string;
+      createdAt: number;
+    }
+  | {
       kind: "event_time";
+      location?: string | null;
+      notes?: string | null;
       title: string;
       sourceText: string;
       createdAt: number;
@@ -95,4 +103,15 @@ export type TimelyState = {
   ledgerEntries: LedgerEntry[];
   messages: ConversationMessage[];
   pendingClarification: PendingClarification | null;
+  pendingConfirmation?: PendingConfirmation | null;
+  pendingEdit?: PendingEdit | null;
 };
+
+export type RecordTarget = { view: "calendar" | "ledger"; recordId: string; dayKey?: string; monthKey?: string };
+export type PendingEdit = { input: string; candidates: RecordTarget[]; createdAt: number };
+export type PendingConfirmation = {
+  id: string;
+  input: string;
+  summary: string;
+  clarification?: PendingClarification | null;
+} & ({ kind: "event"; record: CalendarEvent; before?: CalendarEvent } | { kind: "ledger"; record: LedgerEntry; before?: LedgerEntry });

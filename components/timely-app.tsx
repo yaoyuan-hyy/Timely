@@ -7,6 +7,8 @@ import { CalendarView } from "@/components/timely/calendar-view";
 import { LedgerView } from "@/components/timely/ledger-view";
 import { NavButton } from "@/components/timely/nav-button";
 import { SettingsView } from "@/components/timely/settings-view";
+import { DataTransfer } from "@/components/timely/data-transfer";
+import { findPossibleDuplicate } from "@/lib/record-dedup";
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
 import { useRecordSubmit } from "@/hooks/use-record-submit";
 import { useTimelyActions } from "@/hooks/use-timely-actions";
@@ -14,12 +16,12 @@ import { initialState } from "@/lib/seed-data";
 import { normalizeTimelyState } from "@/lib/state";
 import { activeEvents, cancelledEvents, sortEventsByTime } from "@/lib/stats";
 import { todayLabel } from "@/lib/time";
-import type { AppView, TimelyState } from "@/lib/types";
+import type { AppView, RecordTarget, TimelyState } from "@/lib/types";
 
 const STORAGE_KEY = "timely-event-record-state-v1";
 
 export function TimelyApp() {
-  const [state, setState, isReady] = useLocalStorageState<TimelyState>(
+  const [state, setState, isReady, storageError] = useLocalStorageState<TimelyState>(
     STORAGE_KEY,
     initialState,
     normalizeTimelyState
@@ -28,7 +30,8 @@ export function TimelyApp() {
   const [draft, setDraft] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showCancelledRecords, setShowCancelledRecords] = useState(false);
-  const { isSubmitting, submitMessage } = useRecordSubmit({ state, setState, draft, setDraft });
+  const [recordTarget, setRecordTarget] = useState<RecordTarget | null>(null);
+  const { isSubmitting, submitMessage, cancelSubmission, submitError, confirmPending, discardPending, editPending, fallbackNotice, retrySubmission } = useRecordSubmit({ state, setState, draft, setDraft });
   const {
     cancelEvent,
     restoreEvent,
@@ -54,15 +57,19 @@ export function TimelyApp() {
     : !isChatView || !isReady || (state.messages.length === 0 && !state.pendingClarification);
 
   function resetDemoData() {
+    cancelSubmission();
     setState(initialState);
     setDraft("");
   }
 
   function clearChatHistory() {
+    cancelSubmission();
     setState((current) => ({
       ...current,
       messages: [],
-      pendingClarification: null
+      pendingClarification: null,
+      pendingConfirmation: null,
+      pendingEdit: null
     }));
     setDraft("");
   }
@@ -83,11 +90,22 @@ export function TimelyApp() {
   }
 
   function selectView(nextView: AppView) {
+    setRecordTarget(null);
     setView(nextView);
     if (nextView !== "calendar") {
       setShowCancelledRecords(false);
     }
     setIsMenuOpen(false);
+  }
+  function openRecord(target: RecordTarget) {
+    const exists = target.view === "calendar" ? state.events.some(e => e.id === target.recordId && e.status === "active") : state.ledgerEntries.some(e => e.id === target.recordId);
+    if (!exists) {
+      setState(current => ({ ...current, messages: [...current.messages, { id: `missing-${Date.now()}`, role: "assistant", content: "这条记录已删除或取消，请重新查询。", createdAt: new Date().toISOString() }] }));
+      return;
+    }
+    setRecordTarget(target);
+    setShowCancelledRecords(false);
+    setView(target.view);
   }
 
   return (
@@ -145,8 +163,19 @@ export function TimelyApp() {
         </aside>
 
         <section className="content-area">
+          {storageError && <p className="storage-error" role="alert">{storageError}</p>}
           {view === "chat" && (
             <ChatView
+              submitError={submitError}
+              pendingConfirmation={state.pendingConfirmation}
+              onConfirmPending={confirmPending}
+              onDiscardPending={discardPending}
+              onEditPending={editPending}
+              fallbackNotice={fallbackNotice}
+              onRetry={retrySubmission}
+              possibleDuplicate={Boolean(state.pendingConfirmation && findPossibleDuplicate(state, state.pendingConfirmation))}
+              state={state}
+              onOpenRecord={openRecord}
               messages={state.messages}
               draft={draft}
               setDraft={setDraft}
@@ -156,6 +185,9 @@ export function TimelyApp() {
           )}
           {view === "calendar" && (
             <CalendarView
+              key={recordTarget?.recordId ?? "calendar"}
+              initialDayKey={recordTarget?.dayKey}
+              focusedRecordId={recordTarget?.recordId}
               events={visibleEvents}
               cancelledEvents={cancelledRecordEvents}
               showCancelledRecords={showCancelledRecords}
@@ -166,6 +198,9 @@ export function TimelyApp() {
           )}
           {view === "ledger" && (
             <LedgerView
+              key={recordTarget?.recordId ?? "ledger"}
+              initialMonthKey={recordTarget?.monthKey}
+              focusedRecordId={recordTarget?.recordId}
               entries={state.ledgerEntries}
               onAddEntry={addLedgerEntryRecord}
               onDeleteEntry={deleteLedgerEntryRecord}
@@ -179,7 +214,7 @@ export function TimelyApp() {
               ledgerCount={state.ledgerEntries.length}
               hasPendingClarification={Boolean(state.pendingClarification)}
               onReset={resetDemoData}
-            />
+            ><DataTransfer state={state} setState={setState} /></SettingsView>
           )}
         </section>
       </section>

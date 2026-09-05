@@ -107,7 +107,9 @@ Main files:
 - `components/timely/calendar-view.tsx`: month calendar, single-day timeline, cancelled-records panel.
 - `components/timely/settings-view.tsx`: settings/status surface.
 - `lib/event-recording.ts`: natural-language event create/delete resolution.
-- `lib/ai/minimax-event-parser.ts`: MiniMax parsing adapter.
+- `server/ai/deepseek-record-parser.ts`: DeepSeek event/ledger parsing adapter.
+- `lib/record-result-schema.ts`: shared runtime validation for AI responses.
+- `lib/state-commit.ts`: commits workflow changes while preserving concurrent manual edits.
 - `lib/time.ts`: Shanghai-time utilities.
 - `lib/state.ts`: localStorage state normalizer/migration helper.
 - `lib/stats.ts`: event filtering and sorting helpers.
@@ -123,6 +125,9 @@ Architecture rules:
 - UI components should call domain helpers, not reimplement event matching or time parsing.
 - Prefer small focused modules over growing `components/timely-app.tsx`.
 - Keep edits scoped to the requested behavior.
+- The UI submits through `lib/record-session.ts`; workflow results are proposals. Use `stageRecordResult` for preview and `confirmRecordDraft` for a single-record commit. Never replace current state with an old full-state snapshot on confirmation.
+- Local corrections run before new writes. `pendingEdit` selects among existing active records; `pendingConfirmation` holds one validated create/update draft. Both are cleared on reload.
+- Recent/search/query navigation derives Shanghai day/month from the record time. Backups use the versioned schemas in `lib/data-export.ts`, preview before merging, and preserve current records on same-ID conflicts.
 - Do not rewrite unrelated files or visual systems just because they are nearby.
 - Do not revert user changes or unrelated dirty worktree changes.
 
@@ -180,10 +185,16 @@ Parsing rules:
 
 AI route:
 
-- `/api/record-event` accepts `{ input: string, now?: string }`.
+- `/api/record-input` accepts `{ input: string, now?: string, pendingClarification?: PendingClarification }`.
+- `/api/record-event` remains an alias for compatibility.
+- Use `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL` (default `https://api.deepseek.com`), and `DEEPSEEK_MODEL` (default `deepseek-v4-flash`).
 - Response shape remains `{ result }`.
-- MiniMax failures or timeouts should let the frontend fall back to local parsing.
+- Provider failures, malformed responses, or timeouts let the frontend fall back to local parsing.
+- Valid AI clarification and unsupported results must not be reinterpreted as fresh local writes.
+- Preserve pending drafts across short answers; missing event titles retain the known start time.
 - AI only parses. It must not directly mutate state.
+- Provider failures must be visible alongside local fallback and offer retry with the original input and clarification context. Never treat an HTTP 200 alone as successful semantic recognition.
+- Natural-language creation and correction require explicit preview confirmation. A possible duplicate must show an explicit “仍然保存” action; do not silently discard it.
 
 Query route:
 
@@ -253,7 +264,7 @@ When changing UI structure:
 
 ## Documentation Standard
 
-- Keep `progress.md` current after meaningful product or architecture changes.
+- Keep `docs/progress.md` current after meaningful product or architecture changes.
 - Keep this `AGENTS.md` current when project standards change.
 - Prefer concise, decision-oriented documentation over broad speculative plans.
 - Mention whether a feature belongs to the current MVP or a later phase.

@@ -1,6 +1,19 @@
 # Timely 项目进度
 
-更新时间：2026-06-30
+更新时间：2026-09-05
+
+## 2026-09-05：输入链路修复与 DeepSeek 接入（当前 MVP）
+
+- 模型与接口统一为 `deepseek-v4-flash` / `https://api.deepseek.com/chat/completions`，使用服务端 `DEEPSEEK_*` 配置。删除两份旧 MiniMax 适配器；旧 `/api/record-event` 作为新路由的兼容别名。
+- 追问优先进入写入流程，AI 接收 pending draft；补充 `event_title` 状态，保存明确时间，即使模型澄清时漏回时间也不丢失。流水澄清保留分类、日期等字段，接受 AI 识别的中文金额。
+- 调整查询路由，避免“明天三点会议”变查询，同时保留“今天的日程”“这个月的账单”等简写查询。
+- Zod 在服务端与客户端验证结果。合法澄清/unsupported 不再作为新记录重猜；调用失败或格式错误保留本地降级。
+- 本地支持前天、后天、大后天；未知日期不自动写成今天；结束时间不能早于开始时间。日历未指定结束时间时只显示时间点。
+- workflow 结果按增量合并到当前状态，手动操作优先；重复应用同一结果不重复新增，永久删除的记录不会复活。清空聊天与重置数据使在途请求失效。
+- 新增模型 HTTP、入口多轮追问、状态提交测试和 `npm run test:ai`。所有新增行为先复现失败后修复。
+- 已通过 `npm test`、typecheck、lint、build、静态 JS 语法与 diff 检查。独立代码审查发现的三项边界已加回归并修复。
+- 项目 `.env.local` 已由用户配置 DeepSeek key；本轮四条真实 API 示例已通过。该验证为样例冒烟测试，不代表所有自然语言都已覆盖；密钥未写入仓库或文档。
+- 安装现有锁定依赖时 npm 报告 Node 23 engine 提示和 8 个 high 依赖问题；本轮未自动升级依赖，避免混入框架升级。
 
 ## 当前阶段结论
 
@@ -16,7 +29,7 @@ Timely 当前已经从单一写入 workflow 扩展为 **Supervisor + Write Agent
   -> 事件进入日历；账目进入流水页；查询结果弹出结构化卡片
 ```
 
-当前已经完成一轮 **统一记录硬化 + 温润高级 UI 打磨 + LangGraph workflow/eval dataset + 查询弹窗 agent**。下一阶段建议继续扩充 query eval，并接入 LangSmith/LangFuse/W&B Weave 之一做可观测记录。
+当前已经完成 **统一记录确认、自然语言修改、混合最近记录检索、查询跳转、重复保护、本地备份恢复、DeepSeek fallback 与重试 + 温润高级 UI 打磨 + LangGraph workflow/eval dataset + 查询弹窗 agent**。后续可继续扩充 query eval，并接入 LangSmith/LangFuse/W&B Weave 之一做可观测记录。
 
 ## 产品范围
 
@@ -261,7 +274,7 @@ Timely 当前已经从单一写入 workflow 扩展为 **Supervisor + Write Agent
 
 ## 建议下一步
 
-1. 轮换本地 `.env.local` 中使用过的 MiniMax/OpenAI API key，并在 Vercel 中配置新的生产环境变量。
+1. 如果旧 MiniMax/OpenAI key 曾在外部暴露，轮换它们；生产环境配置 `DEEPSEEK_*` 变量。
 2. 清理 `NODE_TLS_REJECT_UNAUTHORIZED=0` 的环境来源。
 3. 明确 `public` 静态版本定位：只做视觉预览，或移除业务逻辑，避免双实现。
 4. 为日历页补更接近真实交互的端到端/截图验证，覆盖已取消记录开关、恢复和彻底删除。

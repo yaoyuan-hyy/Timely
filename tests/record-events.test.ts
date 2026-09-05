@@ -391,8 +391,8 @@ function stateWithMorningAndAfternoonMeetings(): TimelyState {
   );
 
   assert.equal(state.events.length, 0);
-  assertEventTimeClarification(state, "会议");
-  assert.equal(state.messages.at(-1)?.content, "什么时候？");
+  assert.equal(state.pendingClarification, null);
+  assert.equal(state.messages.at(-1)?.content, "我可以帮你记录或查询日程和流水。");
 }
 
 {
@@ -598,4 +598,22 @@ function stateWithMorningAndAfternoonMeetings(): TimelyState {
   assert.equal(state.events[1].status, "active");
   assert.equal(state.pendingClarification?.kind, "event_delete");
   assert.equal(state.messages.at(-1)?.content, "这天有多条会议记录，请再告诉我是几点的。");
+}
+
+{
+  const result = resolveEventRecordInputWithAi(emptyState(), "明天三点开会", {
+    intent: "create_event", title: "开会", startsAt: "2026-06-11T15:00:00+08:00",
+    endsAt: "2026-06-11T14:00:00+08:00", location: null, notes: null,
+    targetDate: null, clarificationQuestion: null
+  }, { now });
+  assert.equal(result.events.length, 0, "an end before the start must not be recorded");
+}
+
+{
+  for (const [input, day] of [["后天下午三点开会", "12"], ["前天下午三点开会", "08"]]) {
+    const result = resolveEventRecordInput(emptyState(), input, { now });
+    assert.equal(result.events[0]?.startsAt, `2026-06-${day}T15:00:00+08:00`);
+  }
+  const result = resolveEventRecordInput(emptyState(), "春节下午三点开会", { now });
+  assert.equal(result.events.length, 0, "unresolved date must not default to today");
 }

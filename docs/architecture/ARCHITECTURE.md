@@ -1,12 +1,24 @@
 # Timely 技术架构记录
 
-> 更新日期：2026-06-30
+> 更新日期：2026-09-05
 > 产品形态：手机优先、本地优先的自然语言个人记录 Web/PWA
 > 当前重点：LangGraph supervisor + write agent + query agent + local JSON datastore
 
 ---
 
+## 2026-09-05 输入链路调整
+
+- 默认模型改为 DeepSeek `deepseek-v4-flash`，仅服务端读取 `DEEPSEEK_*` 环境变量。
+- 明确查询继续本地执行；追问短答优先进入写入流程，未命中关键词的输入也可交给 AI。
+- API 携带待补充草稿，Zod 校验返回值；澄清保留字段，unsupported 不再触发新的本地记录。
+- `event_title` 草稿保存已有时间；`event_time` 保留地点、备注。
+- `state-commit.ts` 将 workflow 增量合并到最新状态，手动修改优先；清空聊天和重置使在途请求失效。
+- 日历中未给结束时间的事件仅展示开始时间。
+- 真实模型评测用 `npm run test:ai`，离线回归仍用 `npm test`。
+
 ## 1. 架构结论
+
+目录边界按运行环境划分：`app/`、`components/` 和 `hooks/` 只负责浏览器界面；`lib/` 保存可在浏览器和服务端复用的领域逻辑；`server/` 只保存服务端适配器，当前为 `server/ai/deepseek-record-parser.ts`。`app/api/` 是服务端 HTTP 边界，不把 token 或 provider SDK 暴露给客户端。
 
 Timely 当前采用 **Next.js 14 + React 18 + TypeScript + Plain CSS** 构建。产品不是提醒 App、任务管理器、效率分析工具或完整记账软件，而是一个手机优先的自然语言个人记录 App。
 

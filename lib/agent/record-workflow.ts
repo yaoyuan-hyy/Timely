@@ -1,5 +1,5 @@
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
-import { resolveRecordInput, resolveRecordInputWithAi } from "../record-input";
+import { resolveRecordInput, resolveRecordInputWithAi, PENDING_CLARIFICATION_TTL_MS } from "../record-input";
 import type { AiRecordParseResult } from "../record-input";
 import type { CalendarEvent, LedgerEntry, TimelyState } from "../types";
 
@@ -32,6 +32,7 @@ export type ParseRecordInput = (
   input: string,
   context: {
     now: Date;
+    pendingClarification?: TimelyState["pendingClarification"];
   }
 ) => Promise<AiRecordParseResult>;
 
@@ -87,7 +88,7 @@ export function createRecordAgentWorkflow(options: RecordAgentWorkflowOptions = 
     }
 
     try {
-      const aiResult = await options.parseRecordInput(state.normalizedInput, { now });
+      const aiResult = await options.parseRecordInput(state.normalizedInput, { now, pendingClarification: state.currentState.pendingClarification && now.getTime() - state.currentState.pendingClarification.createdAt <= (options.pendingClarificationTtlMs ?? PENDING_CLARIFICATION_TTL_MS) ? state.currentState.pendingClarification : null });
       return {
         aiResult,
         aiError: null,
@@ -209,7 +210,7 @@ function inferRecordOutcome(previous: TimelyState, next: TimelyState): RecordWor
     return "clarification_requested";
   }
 
-  if (previous.pendingClarification && !next.pendingClarification && lastAssistantReply(next) === "好的一声，已取消当前记录。") {
+  if (previous.pendingClarification && !next.pendingClarification && lastAssistantReply(next) === "好的，已取消当前记录。") {
     return "pending_cancelled";
   }
 

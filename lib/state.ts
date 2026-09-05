@@ -19,6 +19,7 @@ export function normalizeTimelyState(value: unknown, fallback: TimelyState): Tim
   };
 }
 
+
 function parseJson(value: string) {
   try {
     return JSON.parse(value) as unknown;
@@ -116,14 +117,20 @@ function normalizeMessage(value: unknown): ConversationMessage | null {
   };
 }
 
-function normalizePendingClarification(value: unknown): PendingClarification | null {
+export function normalizePendingClarification(value: unknown): PendingClarification | null {
   if (!isRecord(value)) {
     return null;
+  }
+
+  if (value.kind === "event_title" && typeof value.startsAt === "string" && Number.isFinite(Date.parse(value.startsAt))) {
+    return { kind: "event_title", startsAt: value.startsAt, sourceText: stringOrEmpty(value.sourceText), createdAt: timestampOrZero(value.createdAt) };
   }
 
   if (value.kind === "event_time" && typeof value.title === "string") {
     return {
       kind: "event_time",
+      location: nullableString(value.location),
+      notes: nullableString(value.notes),
       title: value.title,
       sourceText: stringOrEmpty(value.sourceText),
       createdAt: timestampOrZero(value.createdAt)
