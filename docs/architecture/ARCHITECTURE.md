@@ -1,10 +1,27 @@
 # Timely 技术架构记录
 
-> 更新日期：2026-09-05
+> 更新日期：2026-09-06
 > 产品形态：手机优先、本地优先的自然语言个人记录 Web/PWA
 > 当前重点：LangGraph supervisor + write agent + query agent + local JSON datastore
 
 ---
+
+## 2026-09-06：Repository、Tool 与查询计划边界
+
+查询链路：`query-workflow` → `planQuery`（默认规则，可注入模型）→ `QueryPlan v1` 校验 → `createQueryTools().queryRecords` → `RecordRepository.query` → 本地汇总与 UI_POPUP。
+
+- `lib/query-contract.ts`：严格计划 schema，闭区间时间范围、类型匹配的 nullable 条件、稳定 OperationResult。
+- `lib/query-baseline.ts`：原规则解析独立保留；明确收支过滤，供模型对照。
+- `lib/repository/record-repository.ts`：隔离引用的记录快照、实际时间戳查询、带 expectedBefore 的单条提交。task 无模型，始终返回空。
+- `lib/repository/state-storage.ts`：注入 storage，沿用 normalizeTimelyState 和原 key；读取失败不自动把 fallback 写回覆盖存储。
+- `lib/tools/record-tools.ts`：Query Agent 只有只读能力；UI 的确认提交入口独立。Repository 的成功提交返回内存记录快照，持久化由 storage adapter 完成，不把这两者称为数据库事务。
+- `lib/query-planning.ts`：模型解析失败/超时/非法计划回退规则，返回 source 和 fallbackReason。
+- `server/ai/deepseek-query-planner.ts`：只接收查询原文和 now，不接收本地个人记录。当前用于显式 live eval 与可注入接口，应用默认仍为规则查询。
+- `lib/query-evaluation.ts`：固定 fixture 分别评测计划与执行结果。模型降级即不给模型计分，另保留实际结果是否正确。
+
+这是渐进抽取：现有写 workflow、手动编辑和备份合并仍保留纯领域函数；确认提交与查询已经过 Repository，全部浏览器持久化经过 StateStorage。没有引入数据库、跨标签页锁、账户或新的任务系统。
+
+命令：`npm run test:query-system`、`npm run eval:queries`、`npm run eval:queries -- --live`。
 
 ## 2026-09-05 输入链路调整
 

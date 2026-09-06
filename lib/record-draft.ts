@@ -3,6 +3,7 @@ import { applyWorkflowState } from "./state-commit";
 import { createLocalId } from "./local-id";
 import { formatShanghaiDate, formatShanghaiTime, toShanghaiIso } from "./time";
 import { eventSchema, ledgerSchema } from "./record-validation";
+import { commitConfirmedRecord } from "./tools/record-tools";
 
 export function describeRecord(draft: Pick<PendingConfirmation, "kind" | "record">) {
   const record = draft.record;
@@ -32,16 +33,9 @@ export function confirmRecordDraft(current: TimelyState): TimelyState {
   const draft = current.pendingConfirmation;
   if (!draft) return current;
   const clean = { ...current, pendingConfirmation: null };
-  const records = draft.kind === "event" ? current.events : current.ledgerEntries;
-  const existing = records.find(r => r.id === draft.record.id);
-  if (draft.before && JSON.stringify(existing) !== JSON.stringify(draft.before)) return appendRecordReply(clean, "这条记录已发生变化，请重新修改。");
-  if (!draft.before && existing) return clean;
-  if (draft.kind === "event") {
-    const record = eventSchema.parse(draft.record);
-    return appendRecordReply({ ...clean, events: draft.before ? current.events.map(e => e.id === record.id ? record : e) : [record, ...current.events] }, `${draft.before ? "已修改" : "已记录"}。${draft.summary}。`);
-  }
-  const record = ledgerSchema.parse(draft.record);
-  return appendRecordReply({ ...clean, ledgerEntries: draft.before ? current.ledgerEntries.map(e => e.id === record.id ? record : e) : [record, ...current.ledgerEntries] }, `${draft.before ? "已修改" : "已记录"}。${draft.summary}。`);
+  const result = commitConfirmedRecord(current);
+  if (!result.ok) return appendRecordReply(clean, result.message);
+  return appendRecordReply({ ...clean, ...result.value }, `${draft.before ? "已修改" : "已记录"}。${draft.summary}。`);
 }
 
 export function discardRecordDraft(current: TimelyState): TimelyState {

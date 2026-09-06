@@ -5,6 +5,7 @@ import { runQueryAgentWorkflow, isLikelyQueryIntent } from "./query-workflow";
 import { runRecordAgentWorkflow } from "./record-workflow";
 import type { ParseRecordInput, RecordWorkflowOutcome } from "./record-workflow";
 import type { ConversationMessage, TimelyState } from "../types";
+import type { QueryPlanner } from "../query-contract";
 
 export type TimelyAgentName = "query" | "write" | "chat";
 
@@ -21,6 +22,7 @@ type TimelyAgentOptions = {
   createId?: (prefix: string) => string;
   pendingClarificationTtlMs?: number;
   parseRecordInput?: ParseRecordInput;
+  parseQueryPlan?: QueryPlanner;
 };
 
 export type TimelyAgentWorkflowResult = {
@@ -60,7 +62,7 @@ export function createTimelyAgentWorkflow(options: TimelyAgentOptions = {}) {
   }
 
   async function runQueryAgent(state: TimelyAgentWorkflowState) {
-    const result = await runQueryAgentWorkflow(state.currentState, state.input, { now, createId });
+    const result = await runQueryAgentWorkflow(state.currentState, state.input, { now, createId, parseQueryPlan: options.parseQueryPlan });
 
     return {
       state: result.state,

@@ -69,6 +69,12 @@ With the server running, `npm run test:ai` checks real event, ledger, and clarif
 
 ## Multi-Agent Workflow
 
+For capability-level evaluation, run `npm run bench:queries` (18 frozen regression cases) or add `-- --live` for DeepSeek. The benchmark contains 28 total cases across seven dimensions and supports `--runs`, `--compare`, and `--gate`. See [benchmark methodology and measured results](docs/evals/query-benchmark-v1.md); the earlier six-case eval remains a smoke suite, not an accuracy estimate.
+
+Query execution now has explicit layers: `QueryPlan v1 → query tools → RecordRepository → local UI_POPUP formatting`. The default planner remains rule-based; `parseQueryPlan` can be injected for model comparison. The query model receives only synthetic/user query text and the current time, never the record collection. Confirmed drafts use a separate UI-only commit capability with conflict checks. Browser persistence uses an injected StateStorage adapter.
+
+Run `npm run eval:queries` for the fixed offline baseline. Run `npm run eval:queries -- --live` to compare DeepSeek on the same six synthetic cases using server environment configuration. Reports separate plan accuracy, result accuracy and fallback counts; a fallback never earns model credit. The app does not switch to model query parsing automatically.
+
 The UI first calls `lib/record-session.ts` for local edit resolution and fallback metadata. Existing workflows return proposals; `lib/record-draft.ts` stages a single record without saving it. Confirmation validates and commits only that record, preserving concurrent manual edits. Pending confirmations and edit selections are session-only and are cleared on reload; existing missing-field clarification remains compatible.
 
 Timely now uses a LangGraph supervisor workflow in `lib/agent/app-workflow.ts`. It classifies each input and routes it to one of three agents:
