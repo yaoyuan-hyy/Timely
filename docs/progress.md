@@ -1,6 +1,25 @@
 # Timely 项目进度
 
-更新时间：2026-09-05
+更新时间：2026-09-06
+
+## 2026-09-06：Query benchmark v1
+
+- 增加 28 条人工定义查询样例（10 dev / 18 冻结回归 test），覆盖时间、filter、aggregation、工具调用、empty、ambiguous 和多条件。
+- 在真实工具调用边界记录 name/kind；增加严格端到端评分、维度诊断、数据不变性、fallback 分离、延迟、报告 hashes、重复执行及前后逐例比较。
+- 同一 18 条 test 当次测量：规则 7/18（38.9%），DeepSeek 11/18（61.1%），4 项改善、0 项退步；均无降级或运行错误。样本很小，不能外推为生产准确率。
+- 未改 planner 提示词或补齐能力来迎合分数。平均值/最大值及歧义澄清共七项系统能力缺口继续显式计失败。
+- 方法和完整机器报告位于 `docs/evals/query-benchmark-v1.md` 与相邻 JSON；原六题评测仍只作为 smoke suite。
+
+## 2026-09-06：记录分层与 Query Agent 评测（当前 MVP）
+
+- 已按“回归契约 → Repository → Tool Layer → Query Agent 评测”实施，分支 `codex/record-system-layers`。
+- 六条固定查询样例覆盖日期、UTC 等价时间、取消记录、任务空结果、月边界和收支过滤；原有写入/确认/修改回归保留。
+- 回归先复现并修复：UTC 记录漏查、任务查询混入日程、只查支出时包含收入。
+- 增加 QueryPlan v1 严格契约、隔离快照的 RecordRepository、StateStorage 与只读 Query tools；UI 确认写入检查 expectedBefore。存储读取失败时禁止自动覆盖 fallback。
+- 查询拆成规则计划、可注入模型计划、确定性执行和 UI_POPUP 格式化。应用仍默认规则模式；模型只在显式注入/live eval 中启用。
+- 当次真实 DeepSeek 对照：规则计划/结果 6/6，模型计划/结果 6/6，模型降级 0。仅六条合成样例，不代表广泛自然语言准确率；不能将 fallback 成功计为模型成功。
+- 渐进边界：手动记录操作、写 workflow 候选与备份合并保留现有纯函数；本轮未引入跨标签页事务、数据库或自动发布。
+- 验证：全量 `npm test`、`npm run typecheck`、`npm run lint`、`npm run build` 通过；新增分层测试 15 项通过。评测过程与限制见 `docs/evals/2026-09-06-query-evaluation.md`。
 
 ## 2026-09-05：输入链路修复与 DeepSeek 接入（当前 MVP）
 

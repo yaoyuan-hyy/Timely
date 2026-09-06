@@ -1,0 +1,960 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "time-today",
+      "split": "dev",
+      "tags": [
+        "time"
+      ],
+      "input": "今天有什么安排？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-09-06",
+            "from": "2026-09-06T00:00:00+08:00",
+            "to": "2026-09-06T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [
+          "today"
+        ],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      }
+    },
+    {
+      "id": "time-tomorrow",
+      "split": "dev",
+      "tags": [
+        "time"
+      ],
+      "input": "明天有什么安排？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-09-07",
+            "from": "2026-09-07T00:00:00+08:00",
+            "to": "2026-09-07T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [
+          "utc",
+          "morning",
+          "review",
+          "afternoon"
+        ],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      }
+    },
+    {
+      "id": "time-next-week",
+      "split": "test",
+      "tags": [
+        "time"
+      ],
+      "input": "下周有哪些日程？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-09-07",
+            "from": "2026-09-07T00:00:00+08:00",
+            "to": "2026-09-13T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [
+          "utc",
+          "morning",
+          "review",
+          "afternoon"
+        ],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      }
+    },
+    {
+      "id": "time-next-month",
+      "split": "test",
+      "tags": [
+        "time"
+      ],
+      "input": "下个月有什么安排？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-10-01",
+            "from": "2026-10-01T00:00:00+08:00",
+            "to": "2026-10-31T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [
+          "october"
+        ],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      }
+    },
+    {
+      "id": "time-year-rollover",
+      "split": "test",
+      "tags": [
+        "time",
+        "empty"
+      ],
+      "input": "明天有什么安排？",
+      "now": "2026-12-31T23:30:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2027-01-01",
+            "from": "2027-01-01T00:00:00+08:00",
+            "to": "2027-01-01T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": "empty",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      }
+    },
+    {
+      "id": "time-leap-day",
+      "split": "test",
+      "tags": [
+        "time",
+        "empty"
+      ],
+      "input": "明天的日程",
+      "now": "2028-02-28T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2028-02-29",
+            "from": "2028-02-29T00:00:00+08:00",
+            "to": "2028-02-29T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": "empty",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      }
+    },
+    {
+      "id": "filter-cancelled",
+      "split": "dev",
+      "tags": [
+        "filter"
+      ],
+      "input": "明天下午有哪些会议？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-09-07",
+            "from": "2026-09-07T12:00:00+08:00",
+            "to": "2026-09-07T17:59:59+08:00"
+          },
+          "title": "会议",
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [
+          "afternoon"
+        ],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      }
+    },
+    {
+      "id": "filter-category",
+      "split": "dev",
+      "tags": [
+        "filter"
+      ],
+      "input": "上个月的餐饮流水",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-08-01",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "title": null,
+          "category": "餐饮",
+          "direction": null
+        },
+        "eventIds": [],
+        "ledgerIds": [
+          "refund",
+          "expense"
+        ],
+        "aggregates": {},
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      }
+    },
+    {
+      "id": "filter-direction",
+      "split": "test",
+      "tags": [
+        "filter"
+      ],
+      "input": "上个月收入有哪些？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-08-01",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": "income"
+        },
+        "eventIds": [],
+        "ledgerIds": [
+          "salary",
+          "refund"
+        ],
+        "aggregates": {},
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      }
+    },
+    {
+      "id": "filter-title",
+      "split": "test",
+      "tags": [
+        "filter"
+      ],
+      "input": "明天有哪些产品评审？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-09-07",
+            "from": "2026-09-07T00:00:00+08:00",
+            "to": "2026-09-07T23:59:59+08:00"
+          },
+          "title": "产品评审",
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [
+          "review"
+        ],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      }
+    },
+    {
+      "id": "agg-expense-sum",
+      "split": "dev",
+      "tags": [
+        "aggregation"
+      ],
+      "input": "上个月支出了多少？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-08-01",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": "expense"
+        },
+        "eventIds": [],
+        "ledgerIds": [
+          "transport",
+          "expense"
+        ],
+        "aggregates": {
+          "expenseCents": 6400
+        },
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      }
+    },
+    {
+      "id": "agg-net",
+      "split": "dev",
+      "tags": [
+        "aggregation"
+      ],
+      "input": "统计上个月流水的净收入",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-08-01",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [],
+        "ledgerIds": [
+          "salary",
+          "refund",
+          "transport",
+          "expense"
+        ],
+        "aggregates": {
+          "netCents": 94100,
+          "count": 4
+        },
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      }
+    },
+    {
+      "id": "agg-average",
+      "split": "test",
+      "tags": [
+        "aggregation"
+      ],
+      "input": "上个月支出平均每笔多少？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-08-01",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": "expense"
+        },
+        "eventIds": [],
+        "ledgerIds": [
+          "transport",
+          "expense"
+        ],
+        "aggregates": {
+          "averageCents": 3200
+        },
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      }
+    },
+    {
+      "id": "agg-max",
+      "split": "test",
+      "tags": [
+        "aggregation"
+      ],
+      "input": "上个月最大一笔支出金额多少？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-08-01",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": "expense"
+        },
+        "eventIds": [],
+        "ledgerIds": [
+          "transport",
+          "expense"
+        ],
+        "aggregates": {
+          "maxCents": 3800
+        },
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tool-schedule",
+      "split": "dev",
+      "tags": [
+        "tool_selection"
+      ],
+      "input": "查看明天日程",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-09-07",
+            "from": "2026-09-07T00:00:00+08:00",
+            "to": "2026-09-07T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [
+          "utc",
+          "morning",
+          "review",
+          "afternoon"
+        ],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tool-ledger",
+      "split": "dev",
+      "tags": [
+        "tool_selection"
+      ],
+      "input": "查看上个月的账单",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-08-01",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [],
+        "ledgerIds": [
+          "salary",
+          "refund",
+          "transport",
+          "expense"
+        ],
+        "aggregates": {},
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tool-task",
+      "split": "test",
+      "tags": [
+        "tool_selection",
+        "empty"
+      ],
+      "input": "今天有哪些任务？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "task",
+          "timeRange": {
+            "label": "2026-09-06",
+            "from": "2026-09-06T00:00:00+08:00",
+            "to": "2026-09-06T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [],
+        "ledgerIds": [],
+        "aggregates": {
+          "count": 0
+        },
+        "status": "empty",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "task"
+          }
+        ]
+      }
+    },
+    {
+      "id": "empty-day",
+      "split": "dev",
+      "tags": [
+        "empty"
+      ],
+      "input": "后天有什么安排？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-09-08",
+            "from": "2026-09-08T00:00:00+08:00",
+            "to": "2026-09-08T23:59:59+08:00"
+          },
+          "title": null,
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": "empty",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      }
+    },
+    {
+      "id": "empty-category",
+      "split": "test",
+      "tags": [
+        "empty",
+        "multi_condition"
+      ],
+      "input": "本月工资收入是多少？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-09-01",
+            "from": "2026-09-01T00:00:00+08:00",
+            "to": "2026-09-30T23:59:59+08:00"
+          },
+          "title": null,
+          "category": "工资",
+          "direction": "income"
+        },
+        "eventIds": [],
+        "ledgerIds": [],
+        "aggregates": {
+          "incomeCents": 0
+        },
+        "status": "empty",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      }
+    },
+    {
+      "id": "empty-title",
+      "split": "test",
+      "tags": [
+        "empty",
+        "filter"
+      ],
+      "input": "明天有体检吗？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-09-07",
+            "from": "2026-09-07T00:00:00+08:00",
+            "to": "2026-09-07T23:59:59+08:00"
+          },
+          "title": "体检",
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": "empty",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ambiguous-reference",
+      "split": "test",
+      "tags": [
+        "ambiguous"
+      ],
+      "input": "那一笔是多少钱？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "clarify",
+        "plan": null,
+        "eventIds": [],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": null,
+        "tools": []
+      }
+    },
+    {
+      "id": "ambiguous-recent",
+      "split": "test",
+      "tags": [
+        "ambiguous"
+      ],
+      "input": "最近花了多少钱？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "clarify",
+        "plan": null,
+        "eventIds": [],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": null,
+        "tools": []
+      }
+    },
+    {
+      "id": "ambiguous-meeting",
+      "split": "test",
+      "tags": [
+        "ambiguous"
+      ],
+      "input": "那个会议什么时候？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "clarify",
+        "plan": null,
+        "eventIds": [],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": null,
+        "tools": []
+      }
+    },
+    {
+      "id": "ambiguous-object",
+      "split": "test",
+      "tags": [
+        "ambiguous"
+      ],
+      "input": "帮我查一下之前那个",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "clarify",
+        "plan": null,
+        "eventIds": [],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": null,
+        "tools": []
+      }
+    },
+    {
+      "id": "tool-mixed-write",
+      "split": "test",
+      "tags": [
+        "tool_selection",
+        "ambiguous"
+      ],
+      "input": "查一下流水，顺便删除不需要的记录",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "clarify",
+        "plan": null,
+        "eventIds": [],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": null,
+        "tools": []
+      }
+    },
+    {
+      "id": "multi-ledger-expense",
+      "split": "dev",
+      "tags": [
+        "multi_condition",
+        "filter",
+        "aggregation"
+      ],
+      "input": "上个月餐饮支出了多少？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-08-01",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "title": null,
+          "category": "餐饮",
+          "direction": "expense"
+        },
+        "eventIds": [],
+        "ledgerIds": [
+          "expense"
+        ],
+        "aggregates": {
+          "expenseCents": 3800
+        },
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      }
+    },
+    {
+      "id": "multi-afternoon-title",
+      "split": "test",
+      "tags": [
+        "multi_condition",
+        "time",
+        "filter"
+      ],
+      "input": "明天下午的产品评审有哪些？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-09-07",
+            "from": "2026-09-07T12:00:00+08:00",
+            "to": "2026-09-07T17:59:59+08:00"
+          },
+          "title": "产品评审",
+          "category": null,
+          "direction": null
+        },
+        "eventIds": [
+          "review"
+        ],
+        "ledgerIds": [],
+        "aggregates": {},
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      }
+    },
+    {
+      "id": "multi-income-day",
+      "split": "test",
+      "tags": [
+        "multi_condition",
+        "aggregation",
+        "filter"
+      ],
+      "input": "昨天餐饮的收入是多少？",
+      "now": "2026-09-06T10:00:00+08:00",
+      "expected": {
+        "decision": "answer",
+        "plan": {
+          "version": 1,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-09-05",
+            "from": "2026-09-05T00:00:00+08:00",
+            "to": "2026-09-05T23:59:59+08:00"
+          },
+          "title": null,
+          "category": "餐饮",
+          "direction": "income"
+        },
+        "eventIds": [],
+        "ledgerIds": [
+          "yesterday-refund"
+        ],
+        "aggregates": {
+          "incomeCents": 250
+        },
+        "status": "success",
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -121,6 +121,10 @@ Main files:
 
 Architecture rules:
 
+- Query plans must validate through `lib/query-contract.ts` before Tool/Repository execution. Keep `lib/query-baseline.ts` as the default and evaluation baseline. Use numeric timestamps for filtering, not ISO string comparisons.
+- Query Agent receives only `createQueryTools` capabilities; never give it the UI-only `commitConfirmedRecord` tool. Model query parsing receives input/now, not personal records.
+- RecordRepository snapshots must not leak mutable references. Commits compare expectedBefore to reject stale edits. StateStorage is the localStorage boundary; a failed read must not auto-save fallback data.
+- Run `npm run test:query-system` for layer changes; `npm run eval:queries` compares fixed expected plans/results. Live model evaluation is explicit (`--live`), and fallback must be counted separately from model success.
 - Keep parsing and state transitions in pure library functions where possible.
 - UI components should call domain helpers, not reimplement event matching or time parsing.
 - Prefer small focused modules over growing `components/timely-app.tsx`.

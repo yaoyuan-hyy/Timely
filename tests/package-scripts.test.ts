@@ -6,7 +6,7 @@ const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
 };
 const gitignore = readFileSync(".gitignore", "utf8");
 
-assert.equal(packageJson.scripts?.test, "npm run test:static && npm run test:behavior && npm run test:agent && npm run test:experience");
+assert.equal(packageJson.scripts?.test, "npm run test:static && npm run test:behavior && npm run test:agent && npm run test:experience && npm run test:query-system");
 assert.match(packageJson.scripts?.["test:experience"] ?? "", /tests\/experience\.test\.ts/);
 assert.match(packageJson.scripts?.["test:static"] ?? "", /tests\/ui-shell\.test\.ts/);
 assert.match(packageJson.scripts?.["test:behavior"] ?? "", /tests\/record-events\.test\.ts/);
