@@ -6,7 +6,7 @@ import { loadEnvConfig } from "@next/env";
 import { benchmarkSchema, gradeQuery, wilsonInterval } from "../lib/query-benchmark";
 import type { BenchmarkCase, Observation } from "../lib/query-benchmark";
 import { benchmarkFixture } from "../evals/query-benchmark-fixture";
-import { runQueryAgentWorkflow } from "../lib/agent/query-workflow";
+import { runQueryAgentWorkflow } from "../lib/agent/query-workflow-v1";
 import { parseDeepSeekQueryPlan } from "../server/ai/deepseek-query-planner";
 
 const hash = (value: string) => createHash("sha256").update(value).digest("hex");

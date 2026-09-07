@@ -1,8 +1,9 @@
 "use client";
 
-import { Plus, ReceiptText, Trash2, X } from "lucide-react";
+import { Plus, ReceiptText, Trash2, X, Utensils, Car, House, ShoppingBag, HeartPulse, Clapperboard, BriefcaseBusiness, Gift, Undo2, Coins, Shapes, type LucideIcon } from "lucide-react";
 import type { FormEvent, KeyboardEvent } from "react";
 import { useMemo, useState } from "react";
+import { useDialogFocus } from "@/hooks/use-dialog-focus";
 import {
   formatLedgerAmount,
   groupLedgerEntriesByDay,
@@ -28,20 +29,20 @@ type LedgerEntryManualCreate = {
   note: string | null;
 };
 
-const categoryEmojis: Record<string, string> = {
-  餐饮: "🍔",
-  交通: "🚕",
-  家居: "🏠",
-  日用: "🧴",
-  医疗: "💊",
-  娱乐: "🎬",
-  工资: "💼",
-  报销: "🧾",
-  奖金: "🎁",
-  退款: "↩️",
-  兼职: "🪙",
-  购物: "🛍️",
-  未分类: "✨"
+const categoryIcons: Record<string, LucideIcon> = {
+  餐饮: Utensils,
+  交通: Car,
+  家居: House,
+  日用: ShoppingBag,
+  医疗: HeartPulse,
+  娱乐: Clapperboard,
+  工资: BriefcaseBusiness,
+  报销: ReceiptText,
+  奖金: Gift,
+  退款: Undo2,
+  兼职: Coins,
+  购物: ShoppingBag,
+  未分类: Shapes
 };
 
 const expenseCategories = ["餐饮", "购物", "交通", "家居", "日用", "医疗", "娱乐", "未分类"];
@@ -73,6 +74,8 @@ export function LedgerView({
   const [manualCategory, setManualCategory] = useState(expenseCategories[0]);
   const [manualAmountDraft, setManualAmountDraft] = useState("");
   const [manualNoteDraft, setManualNoteDraft] = useState("");
+  const editorRef = useDialogFocus(Boolean(selectedLedgerEntry), closeLedgerEditor);
+  const manualRef = useDialogFocus(isManualEntryOpen, closeManualEntryDrawer);
 
   const monthEntries = useMemo(() => ledgerEntriesForMonth(entries, selectedMonthDate), [entries, selectedMonthDate]);
   const yearEntries = useMemo(() => ledgerEntriesForYear(entries, selectedMonthDate), [entries, selectedMonthDate]);
@@ -178,8 +181,8 @@ export function LedgerView({
     <div className="view-stack ledger-view">
       <div className="section-head">
         <div>
-          <p className="eyebrow">Ledger</p>
-          <h2>流水</h2>
+          <p className="eyebrow">LEDGER · CNY</p>
+          <h2>{selectedMonthDate.getFullYear()}年{ledgerMode === "month" ? `${selectedMonthDate.getMonth() + 1}月` : ""}收支</h2>
         </div>
         <button
           className="ledger-add-trigger"
@@ -189,6 +192,7 @@ export function LedgerView({
           onClick={openManualEntryDrawer}
         >
           <Plus size={20} />
+          <span>记一笔</span>
         </button>
       </div>
 
@@ -288,7 +292,7 @@ export function LedgerView({
             aria-label="关闭流水编辑"
             onClick={closeLedgerEditor}
           />
-          <section className="ledger-editor-drawer" role="dialog" aria-modal="true" aria-label="编辑流水">
+          <section ref={editorRef} className="ledger-editor-drawer" role="dialog" aria-modal="true" aria-label="编辑流水">
             <span className="ledger-editor-handle" aria-hidden="true" />
             <div className="ledger-editor-head">
               <div>
@@ -340,7 +344,7 @@ export function LedgerView({
             aria-label="关闭手动添加流水"
             onClick={closeManualEntryDrawer}
           />
-          <section className="ledger-editor-drawer ledger-manual-drawer" role="dialog" aria-modal="true" aria-label="手动添加流水">
+          <section ref={manualRef} className="ledger-editor-drawer ledger-manual-drawer" role="dialog" aria-modal="true" aria-label="手动添加流水">
             <span className="ledger-editor-handle" aria-hidden="true" />
             <div className="ledger-editor-head">
               <div>
@@ -381,7 +385,7 @@ export function LedgerView({
                     aria-pressed={manualCategory === category}
                     onClick={() => setManualCategory(category)}
                   >
-                    <span>{getLedgerCategoryEmoji(category)}</span>
+                    <span>{getLedgerCategoryIcon(category)}</span>
                     <small>{category}</small>
                   </button>
                 ))}
@@ -470,8 +474,8 @@ function LedgerEntryRow({
       onClick={() => onOpen(entry)}
       onKeyDown={handleKeyDown}
     >
-      <span className="ledger-category-emoji" aria-label={`${entry.category}分类`}>
-        {getLedgerCategoryEmoji(entry.category)}
+      <span className="ledger-category-icon" aria-label={`${entry.category}分类`}>
+        {getLedgerCategoryIcon(entry.category)}
       </span>
       <div className="ledger-entry-main">
         <h4>{entry.category}</h4>
@@ -502,8 +506,9 @@ function formatExpenseAmount(amountCents: number) {
   return amountCents > 0 ? `-${formatLedgerAmount(amountCents)}` : formatLedgerAmount(0);
 }
 
-function getLedgerCategoryEmoji(category: string) {
-  return categoryEmojis[category] ?? categoryEmojis.未分类;
+function getLedgerCategoryIcon(category: string) {
+  const Icon = categoryIcons[category] ?? Shapes;
+  return <Icon size={20} strokeWidth={1.7} aria-hidden="true" />;
 }
 
 function getCurrentShanghaiMonthDate() {

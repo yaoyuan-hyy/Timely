@@ -8,11 +8,10 @@ Timely is a mobile-first natural-language personal record app. Its current app i
 
 ```text
 Natural-language input
-  -> LangGraph supervisor agent
-  -> write agent or query agent
-  -> optional AI parse for writes, with local fallback
-  -> local query over TimelyState for personal-data questions
-  -> write TimelyState or emit UI_POPUP query payload
+  -> unified InputDecision planner (/api/input-decision)
+  -> validated field patches, clarification/recovery, or read-only Query Agent v2
+  -> explicit preview and confirmation for writes, or UI_POPUP for executed queries
+  -> single-record commit to TimelyState
   -> persist in localStorage
   -> view, cancel, restore, delete, or inspect structured query cards
 ```
@@ -42,23 +41,23 @@ Out of scope until explicitly requested:
 
 ## Visual Design Standard
 
-Timely should feel calm, premium, soft, and quiet. Prefer a high-end mobile utility aesthetic over a generic SaaS dashboard.
+Timely should feel mature, clear, and quiet. The 2026-09-07 redesign replaces the simulated phone shell with a responsive application workspace: persistent desktop sidebar and mobile bottom navigation.
 
 Current visual direction:
 
-- Vibe: soft structuralism with warm editorial calm.
-- Backgrounds: milk white, oat, warm cream, muted sage, softened blue-green. Avoid pure black and pure white as dominant surfaces.
-- Text: deep warm gray, not hard black.
-- Contrast: gentle and readable, never harsh.
+- Vibe: restrained contemporary personal utility, with clear information hierarchy.
+- Backgrounds: light neutral workspace, white panels, dark green accents.
+- Text: dark ink with readable secondary gray. Do not fade essential content.
+- Contrast: prioritize legibility and distinct active/focus states.
 - Whitespace: generous. Calendar and timeline views must breathe.
-- Surfaces: soft physical layers with subtle nested shells, inner highlights, and diffused shadows.
-- Radius: rounded, squircle-like forms for panels, bubbles, controls, and date cells.
+- Surfaces: fine borders and minimal shadows; avoid nested decorative shells.
+- Radius: consistent 12–18 px panels with smaller controls.
 - Motion: spring-like and physically weighted. Prefer `cubic-bezier(0.32, 0.72, 0, 1)` or an established local motion token.
 
 Avoid:
 
 - Harsh black text on pure white panels.
-- Generic gray borders or heavy dark shadows.
+- Heavy dark shadows and decorative gradients.
 - Busy gradients, decorative orbs, bokeh blobs, or loud one-note palettes.
 - Marketing-style hero sections inside the product shell.
 - Dense controls that crowd the calendar or timeline.
@@ -66,18 +65,18 @@ Avoid:
 
 Component expectations:
 
-- Chat bubbles use rounded forms and soft shadows.
-- The composer uses a double-layer soft shell.
-- The microphone placeholder should look like a soft, pressable center even while disabled.
+- Chat separates sender, content, and timestamp with readable text.
+- The composer is a clear input surface with a prominent send action.
+- The microphone placeholder stays visibly disabled and secondary.
 - Calendar date highlights should be rounded and full, not sharp or tiny.
-- Timeline nodes should feel tactile and calm, with clear spacing between hours.
+- Timeline uses clear time labels and consistent event alignment.
 - The cancelled-records panel should open with spring-like motion and remain visually quiet.
 - Restore and permanent-delete actions should be clear but understated.
 
 Icons:
 
 - The project currently uses `lucide-react`; keep stroke weights light where possible.
-- Prefer existing icon patterns over adding a second icon library.
+- Prefer existing icon patterns over adding a second icon library. Ledger categories use Lucide icons, not emoji.
 
 CSS:
 
@@ -121,8 +120,16 @@ Main files:
 
 Architecture rules:
 
+- Active UI uses `runInputSession` and `/api/input-decision`; v1 supervisor/write routes remain compatibility surfaces. `lib/input-recovery.ts` handles bounded unresolved raw input, distinct from validated drafts. See `docs/architecture/input-context-recovery.md`.
+- Recovery requires matching id/revision and explicit continue/replace. Old field evidence uses turnId (or a unique exact-source match); resolve relative dates against that source turn's time. Never promote rejected model fields into trusted drafts.
+- Unresolved recovery blocks UI and Tool confirmation. Successful resolution consumes it; cancel/reload clear it; expiration is checked on input after 15 minutes. Keep at most 4 turns / 12000 characters, max 4000 per input. Do not replace current records with captured retry state.
+- Recovery parsing can make one bounded validation repair; both attempts share 15 seconds. Record provider attempts separately from logical input turns and local fallback in evaluations.
+
 - Query plans must validate through `lib/query-contract.ts` before Tool/Repository execution. Keep `lib/query-baseline.ts` as the default and evaluation baseline. Use numeric timestamps for filtering, not ISO string comparisons.
 - Query Agent receives only `createQueryTools` capabilities; never give it the UI-only `commitConfirmedRecord` tool. Model query parsing receives input/now, not personal records.
+- Query Agent v2 must route `execute`, `clarify`, and `unsupported` conditionally. Clarify/unsupported call no query tool and emit no UI_POPUP. Execute uses validated filters through Repository and deterministic aggregation in `lib/query-executor.ts`; no model arithmetic.
+- Keep `events`, `ledgerEntries` and `reminders` unchanged on query paths. Messages and the separate `pendingQueryClarification` may change; never use write clarification state for query follow-ups. Average is rounded half-up to cents with sum/count evidence; empty average/max/min is null and empty count/sum is zero.
+- `npm run test:query-v2` tests decisions/execution/workflow/scoring; `npm run bench:queries:v2 -- --live` explicitly evaluates model v2. Preserve frozen v1 cases and historical reports. No benchmark-specific production branches.
 - RecordRepository snapshots must not leak mutable references. Commits compare expectedBefore to reject stale edits. StateStorage is the localStorage boundary; a failed read must not auto-save fallback data.
 - Run `npm run test:query-system` for layer changes; `npm run eval:queries` compares fixed expected plans/results. Live model evaluation is explicit (`--live`), and fallback must be counted separately from model success.
 - Keep parsing and state transitions in pure library functions where possible.
@@ -203,7 +210,7 @@ AI route:
 Query route:
 
 - Query inputs are handled by the local query agent over `TimelyState`.
-- Query responses must include a short friendly intro plus a valid ````json UI_POPUP` block.
+- Executed query responses must include a short friendly intro plus a valid ````json UI_POPUP` block; clarify and unsupported return concise text without a popup.
 - If no records match, still emit `UI_POPUP` with `query_status: "empty"`.
 - The frontend parses `UI_POPUP` and renders a quiet card/window; do not rely on plain text only for query results.
 

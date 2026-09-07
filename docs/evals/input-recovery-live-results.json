@@ -1,0 +1,544 @@
+{
+  "generatedAt": "2026-09-07T12:45:08.989Z",
+  "model": "deepseek-v4-flash",
+  "method": "Injected initial failure or clarification, one live planner invocation per follow-up, at most one validation repair; conditional recovery test, not general accuracy",
+  "sourceHashes": {
+    "lib/input-recovery.ts": "35b41604cf2cf455b19d9504dc3a39f9f7aae6f89325bbe90fef60b31c9776cd",
+    "lib/write-session.ts": "cfa1d7ef4824e3bfbad0da74cb99283fdf638bdad8c42d8ff517574963726dd6",
+    "lib/write-contract.ts": "f99732796669c6ed84bdccf8a7c6f6683694d3e174f2b7de8a5c58afd239e47a",
+    "lib/write-draft.ts": "07fbe4748942226dbdce32c9e8729fd32eccd23705cec941c5898de363f05c17",
+    "server/ai/deepseek-input-decision.ts": "0b32968c3966c84e2ec021568c36d8423e2ffbff1d848a01d996247da519fb20",
+    "scripts/eval-input-recovery.ts": "e702c4a5a2bfc928f1f34fef060ba3aef35c9e4d5c076551f719613f7b7d23ad"
+  },
+  "summary": {
+    "cases": 6,
+    "passed": 6,
+    "fallback": 0,
+    "providerCalls": 8
+  },
+  "rows": [
+    {
+      "id": "provider-loss",
+      "injectedReason": "provider",
+      "input": "昨天午饭",
+      "followup": "花35元",
+      "context": {
+        "recovery": {
+          "id": "recovery-495e1c81-2b61-4e32-bedb-1441da0e2d1a",
+          "revision": 1,
+          "reason": "provider",
+          "question": "AI 暂时不可用，原话已保留，记录未写入。可以重试或继续补充。",
+          "expiresAt": 1788747300000,
+          "turns": [
+            {
+              "id": "turn-cd194e63-82c8-4201-a6b2-7c1dd00c24b3",
+              "input": "昨天午饭",
+              "referenceNow": "2026-09-07T02:00:00.000Z"
+            }
+          ]
+        },
+        "draft": null,
+        "selection": null,
+        "query": null
+      },
+      "passed": true,
+      "checks": {
+        "noEarlyWrite": true,
+        "proposal": true,
+        "resolved": true,
+        "liveModel": true,
+        "count": true,
+        "amount": true,
+        "date": true,
+        "confirmOnce": true
+      },
+      "source": "model",
+      "error": null,
+      "decision": {
+        "action": "write",
+        "operation": "create",
+        "recovery": {
+          "id": "recovery-495e1c81-2b61-4e32-bedb-1441da0e2d1a",
+          "revision": 1,
+          "mode": "continue"
+        },
+        "kind": "ledger",
+        "patch": {
+          "date": {
+            "value": {
+              "type": "relative_day",
+              "offset": -1
+            },
+            "evidence": "昨天",
+            "turnId": "turn-cd194e63-82c8-4201-a6b2-7c1dd00c24b3"
+          },
+          "amount": {
+            "value": "35",
+            "evidence": "花35元"
+          },
+          "direction": {
+            "value": "expense",
+            "evidence": "花35元"
+          },
+          "category": {
+            "value": "午饭",
+            "evidence": "午饭",
+            "turnId": "turn-cd194e63-82c8-4201-a6b2-7c1dd00c24b3"
+          }
+        }
+      },
+      "actual": {
+        "id": "record-22ba7073-0dd5-4780-94cf-403aca6de3c9",
+        "sourceText": "昨天午饭\n花35元",
+        "createdAt": "2026-09-07T10:01:00+08:00",
+        "updatedAt": "2026-09-07T10:01:00+08:00",
+        "direction": "expense",
+        "amountCents": 3500,
+        "currency": "CNY",
+        "category": "午饭",
+        "occurredAt": "2026-09-06T10:01:00+08:00",
+        "note": null,
+        "counterparty": null
+      },
+      "providerCalls": 2,
+      "latencyMs": 2905
+    },
+    {
+      "id": "schema-loss",
+      "injectedReason": "invalid_decision",
+      "input": "前天打车",
+      "followup": "车费是42元",
+      "context": {
+        "recovery": {
+          "id": "recovery-36f27fa8-3106-448d-ab9b-ebf07d5d9c93",
+          "revision": 1,
+          "reason": "invalid_decision",
+          "question": "这次识别未完成，已保留原话。你可以补充说明或重试。",
+          "expiresAt": 1788747300000,
+          "turns": [
+            {
+              "id": "turn-0b478269-da21-44de-8aae-62ca319637b1",
+              "input": "前天打车",
+              "referenceNow": "2026-09-07T02:00:00.000Z"
+            }
+          ]
+        },
+        "draft": null,
+        "selection": null,
+        "query": null
+      },
+      "passed": true,
+      "checks": {
+        "noEarlyWrite": true,
+        "proposal": true,
+        "resolved": true,
+        "liveModel": true,
+        "count": true,
+        "amount": true,
+        "date": true,
+        "confirmOnce": true
+      },
+      "source": "model",
+      "error": null,
+      "decision": {
+        "action": "write",
+        "operation": "create",
+        "recovery": {
+          "id": "recovery-36f27fa8-3106-448d-ab9b-ebf07d5d9c93",
+          "revision": 1,
+          "mode": "continue"
+        },
+        "kind": "ledger",
+        "patch": {
+          "date": {
+            "value": {
+              "type": "relative_day",
+              "offset": -2
+            },
+            "evidence": "前天",
+            "turnId": "turn-0b478269-da21-44de-8aae-62ca319637b1"
+          },
+          "amount": {
+            "value": "42元",
+            "evidence": "车费是42元"
+          },
+          "direction": {
+            "value": "expense",
+            "evidence": "车费是42元"
+          },
+          "category": {
+            "value": "打车",
+            "evidence": "前天打车",
+            "turnId": "turn-0b478269-da21-44de-8aae-62ca319637b1"
+          }
+        }
+      },
+      "actual": {
+        "id": "record-6c80e23d-ea8f-4ea7-bbe2-3727f4dbe0f0",
+        "sourceText": "前天打车\n车费是42元",
+        "createdAt": "2026-09-07T10:01:00+08:00",
+        "updatedAt": "2026-09-07T10:01:00+08:00",
+        "direction": "expense",
+        "amountCents": 4200,
+        "currency": "CNY",
+        "category": "打车",
+        "occurredAt": "2026-09-05T10:01:00+08:00",
+        "note": null,
+        "counterparty": null
+      },
+      "providerCalls": 1,
+      "latencyMs": 1679
+    },
+    {
+      "id": "midnight",
+      "injectedReason": "provider",
+      "input": "昨天午饭",
+      "followup": "花35元",
+      "context": {
+        "recovery": {
+          "id": "recovery-c59efd12-f520-4dae-a918-1352f4eea059",
+          "revision": 1,
+          "reason": "provider",
+          "question": "AI 暂时不可用，原话已保留，记录未写入。可以重试或继续补充。",
+          "expiresAt": 1788797640000,
+          "turns": [
+            {
+              "id": "turn-de8bef1c-65cd-4b02-ae5a-08e26b6e2e7e",
+              "input": "昨天午饭",
+              "referenceNow": "2026-09-07T15:59:00.000Z"
+            }
+          ]
+        },
+        "draft": null,
+        "selection": null,
+        "query": null
+      },
+      "passed": true,
+      "checks": {
+        "noEarlyWrite": true,
+        "proposal": true,
+        "resolved": true,
+        "liveModel": true,
+        "count": true,
+        "amount": true,
+        "date": true,
+        "confirmOnce": true
+      },
+      "source": "model",
+      "error": null,
+      "decision": {
+        "action": "write",
+        "operation": "create",
+        "recovery": {
+          "id": "recovery-c59efd12-f520-4dae-a918-1352f4eea059",
+          "revision": 1,
+          "mode": "continue"
+        },
+        "kind": "ledger",
+        "patch": {
+          "date": {
+            "value": {
+              "type": "relative_day",
+              "offset": -1
+            },
+            "evidence": "昨天",
+            "turnId": "turn-de8bef1c-65cd-4b02-ae5a-08e26b6e2e7e"
+          },
+          "amount": {
+            "value": "35",
+            "evidence": "花35元"
+          },
+          "direction": {
+            "value": "expense",
+            "evidence": "花35元"
+          },
+          "category": {
+            "value": "午饭",
+            "evidence": "午饭",
+            "turnId": "turn-de8bef1c-65cd-4b02-ae5a-08e26b6e2e7e"
+          }
+        }
+      },
+      "actual": {
+        "id": "record-b7337034-ddec-4fdf-b830-858d5ddae2ee",
+        "sourceText": "昨天午饭\n花35元",
+        "createdAt": "2026-09-08T00:01:00+08:00",
+        "updatedAt": "2026-09-08T00:01:00+08:00",
+        "direction": "expense",
+        "amountCents": 3500,
+        "currency": "CNY",
+        "category": "午饭",
+        "occurredAt": "2026-09-06T00:01:00+08:00",
+        "note": null,
+        "counterparty": null
+      },
+      "providerCalls": 1,
+      "latencyMs": 1665
+    },
+    {
+      "id": "new-topic",
+      "injectedReason": "provider",
+      "input": "昨天午饭",
+      "followup": "换个话题，今天买咖啡花28元",
+      "context": {
+        "recovery": {
+          "id": "recovery-d645bae0-11bc-4908-ab1f-0c95de55a3a4",
+          "revision": 1,
+          "reason": "provider",
+          "question": "AI 暂时不可用，原话已保留，记录未写入。可以重试或继续补充。",
+          "expiresAt": 1788747300000,
+          "turns": [
+            {
+              "id": "turn-b1597064-3ed9-43bf-bcc0-4752e40484c5",
+              "input": "昨天午饭",
+              "referenceNow": "2026-09-07T02:00:00.000Z"
+            }
+          ]
+        },
+        "draft": null,
+        "selection": null,
+        "query": null
+      },
+      "passed": true,
+      "checks": {
+        "noEarlyWrite": true,
+        "proposal": true,
+        "resolved": true,
+        "liveModel": true,
+        "count": true,
+        "amount": true,
+        "date": true,
+        "confirmOnce": true
+      },
+      "source": "model",
+      "error": null,
+      "decision": {
+        "action": "write",
+        "operation": "create",
+        "recovery": {
+          "id": "recovery-d645bae0-11bc-4908-ab1f-0c95de55a3a4",
+          "revision": 1,
+          "mode": "replace"
+        },
+        "kind": "ledger",
+        "patch": {
+          "amount": {
+            "value": "28",
+            "evidence": "28元"
+          },
+          "direction": {
+            "value": "expense",
+            "evidence": "买咖啡花28元"
+          },
+          "category": {
+            "value": "咖啡",
+            "evidence": "咖啡"
+          },
+          "counterparty": {
+            "value": "咖啡",
+            "evidence": "咖啡"
+          }
+        }
+      },
+      "actual": {
+        "id": "record-42865f6c-a8a6-40ee-ac90-74e8f481eaef",
+        "sourceText": "换个话题，今天买咖啡花28元",
+        "createdAt": "2026-09-07T10:01:00+08:00",
+        "updatedAt": "2026-09-07T10:01:00+08:00",
+        "direction": "expense",
+        "amountCents": 2800,
+        "currency": "CNY",
+        "category": "咖啡",
+        "occurredAt": "2026-09-07T10:01:00+08:00",
+        "note": null,
+        "counterparty": "咖啡"
+      },
+      "providerCalls": 1,
+      "latencyMs": 1539
+    },
+    {
+      "id": "clarify-intent",
+      "injectedReason": "clarify",
+      "input": "昨天午饭",
+      "followup": "我要记账，花了35元",
+      "context": {
+        "recovery": {
+          "id": "recovery-a62098b2-8dd8-4cf6-acac-b8c65351e5f2",
+          "revision": 1,
+          "reason": "clarify",
+          "question": "是要记账还是查询？",
+          "expiresAt": 1788747300000,
+          "turns": [
+            {
+              "id": "turn-7bf42026-9c1c-453e-b32c-3286eaca0b21",
+              "input": "昨天午饭",
+              "referenceNow": "2026-09-07T02:00:00.000Z"
+            }
+          ]
+        },
+        "draft": null,
+        "selection": null,
+        "query": null
+      },
+      "passed": true,
+      "checks": {
+        "noEarlyWrite": true,
+        "proposal": true,
+        "resolved": true,
+        "liveModel": true,
+        "count": true,
+        "amount": true,
+        "date": true,
+        "confirmOnce": true
+      },
+      "source": "model",
+      "error": null,
+      "decision": {
+        "action": "write",
+        "operation": "create",
+        "recovery": {
+          "id": "recovery-a62098b2-8dd8-4cf6-acac-b8c65351e5f2",
+          "revision": 1,
+          "mode": "continue"
+        },
+        "kind": "ledger",
+        "patch": {
+          "date": {
+            "value": {
+              "type": "relative_day",
+              "offset": -1
+            },
+            "evidence": "昨天",
+            "turnId": "turn-7bf42026-9c1c-453e-b32c-3286eaca0b21"
+          },
+          "amount": {
+            "value": "35",
+            "evidence": "花了35元"
+          },
+          "direction": {
+            "value": "expense",
+            "evidence": "花了35元"
+          },
+          "category": {
+            "value": "午饭",
+            "evidence": "午饭",
+            "turnId": "turn-7bf42026-9c1c-453e-b32c-3286eaca0b21"
+          }
+        }
+      },
+      "actual": {
+        "id": "record-12f98c16-ff83-49b8-b6f8-757481e53c94",
+        "sourceText": "昨天午饭\n我要记账，花了35元",
+        "createdAt": "2026-09-07T10:01:00+08:00",
+        "updatedAt": "2026-09-07T10:01:00+08:00",
+        "direction": "expense",
+        "amountCents": 3500,
+        "currency": "CNY",
+        "category": "午饭",
+        "occurredAt": "2026-09-06T10:01:00+08:00",
+        "note": null,
+        "counterparty": null
+      },
+      "providerCalls": 1,
+      "latencyMs": 1837
+    },
+    {
+      "id": "failed-correction",
+      "injectedReason": "provider",
+      "input": "改成昨天",
+      "followup": "金额也改成45元",
+      "context": {
+        "recovery": {
+          "id": "recovery-9b9c4b37-50da-49d9-8876-887cdfc33078",
+          "revision": 1,
+          "reason": "provider",
+          "question": "AI 暂时不可用，原话已保留，记录未写入。可以重试或继续补充。",
+          "expiresAt": 1788747300000,
+          "turns": [
+            {
+              "id": "turn-fcb0ea1e-4949-4de3-a975-d6c9ec4b038f",
+              "input": "改成昨天",
+              "referenceNow": "2026-09-07T02:00:00.000Z"
+            }
+          ]
+        },
+        "draft": {
+          "id": "write-draft-64594c0c-d964-4f7b-8ee0-8d8c42b2063c",
+          "revision": 1,
+          "kind": "ledger",
+          "operation": "create",
+          "fields": {
+            "date": "2026-09-07",
+            "time": {
+              "hour": 10,
+              "minute": 0
+            },
+            "category": "未分类",
+            "amountCents": 3500,
+            "direction": "expense"
+          },
+          "missing": []
+        },
+        "selection": null,
+        "query": null
+      },
+      "passed": true,
+      "checks": {
+        "noEarlyWrite": true,
+        "proposal": true,
+        "resolved": true,
+        "liveModel": true,
+        "count": true,
+        "amount": true,
+        "date": true,
+        "confirmOnce": true
+      },
+      "source": "model",
+      "error": null,
+      "decision": {
+        "action": "write",
+        "operation": "revise",
+        "base": {
+          "id": "write-draft-64594c0c-d964-4f7b-8ee0-8d8c42b2063c",
+          "revision": 1
+        },
+        "recovery": {
+          "id": "recovery-9b9c4b37-50da-49d9-8876-887cdfc33078",
+          "revision": 1,
+          "mode": "continue"
+        },
+        "uncertain": [],
+        "kind": "ledger",
+        "patch": {
+          "date": {
+            "value": {
+              "type": "relative_day",
+              "offset": -1
+            },
+            "evidence": "改成昨天",
+            "turnId": "turn-fcb0ea1e-4949-4de3-a975-d6c9ec4b038f"
+          },
+          "amount": {
+            "value": "45元",
+            "evidence": "金额也改成45元"
+          }
+        }
+      },
+      "actual": {
+        "id": "record-3cb225dc-766a-4234-9357-4f5605e1c780",
+        "sourceText": "午饭花35\n改成昨天\n金额也改成45元",
+        "createdAt": "2026-09-07T10:01:00+08:00",
+        "updatedAt": "2026-09-07T10:01:00+08:00",
+        "direction": "expense",
+        "amountCents": 4500,
+        "currency": "CNY",
+        "category": "未分类",
+        "occurredAt": "2026-09-06T10:00:00+08:00",
+        "note": null,
+        "counterparty": null
+      },
+      "providerCalls": 2,
+      "latencyMs": 3284
+    }
+  ]
+}

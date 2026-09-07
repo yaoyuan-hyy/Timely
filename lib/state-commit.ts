@@ -8,7 +8,8 @@ export function applyWorkflowState(current: TimelyState, base: TimelyState, next
     ledgerEntries: mergeRecords(current.ledgerEntries, base.ledgerEntries, next.ledgerEntries),
     messages: mergeRecords(current.messages, base.messages, next.messages, true),
     pendingClarification: equal(current.pendingClarification, base.pendingClarification)
-      ? next.pendingClarification : current.pendingClarification
+      ? next.pendingClarification : current.pendingClarification,
+    ...(next.pendingQueryClarification !== undefined || current.pendingQueryClarification !== undefined ? { pendingQueryClarification: equal(current.pendingQueryClarification, base.pendingQueryClarification) ? next.pendingQueryClarification : current.pendingQueryClarification } : {})
   };
 }
 

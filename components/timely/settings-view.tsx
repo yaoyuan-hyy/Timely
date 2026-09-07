@@ -23,7 +23,7 @@ export function SettingsView({
       <div className="section-head">
         <div>
           <p className="eyebrow">Settings</p>
-          <h2>设置</h2>
+          <h2>你的记录空间</h2>
         </div>
         <ShieldCheck size={22} />
       </div>

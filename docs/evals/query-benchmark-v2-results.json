@@ -1,0 +1,2069 @@
+{
+  "metadata": {
+    "version": 2,
+    "generatedAt": "2026-09-06T18:09:16.461Z",
+    "mode": "model",
+    "model": "deepseek-v4-flash",
+    "temperature": 0,
+    "split": "test",
+    "repeats": 1,
+    "datasetHash": "8b1cc58375e747be6357b321d00b4c93003c94381cd2912779eac7da5aacde07",
+    "fixtureHash": "02f77061c60b56bf8d8963f820f4331b064f870519c23257722be1eaef0a6a29",
+    "scorerHash": "0346fef5bc3f242165137d7c384e53c1c536eb3f6e906404181230b506f2e64c",
+    "sourceHash": "570bfad7aa7940a3ed563d016a79eac9c036b4848c617fd98b37083af0d4c186",
+    "gitCommit": "788be2bf3dc82fc1588e90d0079ce9d169612304",
+    "dirty": true
+  },
+  "summary": {
+    "cases": 18,
+    "attempts": 18,
+    "passed": 12,
+    "effectivePassed": 15,
+    "accuracy": 0.6666666666666666,
+    "decisionAccuracy": {
+      "passed": 18,
+      "total": 18,
+      "accuracy": 1
+    },
+    "planAccuracy": {
+      "passed": 10,
+      "total": 13,
+      "accuracy": 0.7692307692307693
+    },
+    "executionAccuracy": {
+      "passed": 13,
+      "total": 13,
+      "accuracy": 1
+    },
+    "pipelineExecutionAccuracy": {
+      "passed": 10,
+      "total": 13,
+      "accuracy": 0.7692307692307693
+    },
+    "stablePassed": 12,
+    "wilson95": [
+      0.4374906934425036,
+      0.8372144563633714
+    ],
+    "fallbacks": 3,
+    "errors": 0,
+    "p50Ms": 722,
+    "p95Ms": 1191,
+    "byTag": {
+      "time": {
+        "passed": 4,
+        "total": 5
+      },
+      "empty": {
+        "passed": 3,
+        "total": 5
+      },
+      "filter": {
+        "passed": 1,
+        "total": 5
+      },
+      "aggregation": {
+        "passed": 2,
+        "total": 3
+      },
+      "tool_selection": {
+        "passed": 2,
+        "total": 2
+      },
+      "multi_condition": {
+        "passed": 0,
+        "total": 3
+      },
+      "ambiguous": {
+        "passed": 4,
+        "total": 5
+      }
+    },
+    "checks": {
+      "decision": {
+        "passed": 18,
+        "total": 18
+      },
+      "plan": {
+        "passed": 10,
+        "total": 13
+      },
+      "execution": {
+        "passed": 10,
+        "total": 13
+      },
+      "no_execution": {
+        "passed": 18,
+        "total": 18
+      },
+      "tool_selection": {
+        "passed": 18,
+        "total": 18
+      },
+      "read_only": {
+        "passed": 18,
+        "total": 18
+      }
+    }
+  },
+  "comparison": null,
+  "rows": [
+    {
+      "id": "time-next-week",
+      "run": 1,
+      "tags": [
+        "time"
+      ],
+      "expected": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-09-07",
+            "from": "2026-09-07T00:00:00+08:00",
+            "to": "2026-09-13T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 4,
+          "eventIds": [
+            "utc",
+            "morning",
+            "review",
+            "afternoon"
+          ],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 4
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      },
+      "actual": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "下周",
+            "from": "2026-09-07T00:00:00+08:00",
+            "to": "2026-09-13T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 4,
+          "eventIds": [
+            "utc",
+            "morning",
+            "review",
+            "afternoon"
+          ],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 4
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 1191,
+        "noExecution": false
+      },
+      "executionOracle": {
+        "correct": true,
+        "evidence": {
+          "status": "success",
+          "matchedCount": 4,
+          "eventIds": [
+            "utc",
+            "morning",
+            "review",
+            "afternoon"
+          ],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 4
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "error": null
+      },
+      "passed": true,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": true,
+        "execution": true,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "time-next-month",
+      "run": 1,
+      "tags": [
+        "time"
+      ],
+      "expected": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-10-01",
+            "from": "2026-10-01T00:00:00+08:00",
+            "to": "2026-10-31T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 1,
+          "eventIds": [
+            "october"
+          ],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 1
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      },
+      "actual": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "下个月",
+            "from": "2026-10-01T00:00:00+08:00",
+            "to": "2026-10-31T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 1,
+          "eventIds": [
+            "october"
+          ],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 1
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 1154,
+        "noExecution": false
+      },
+      "executionOracle": {
+        "correct": true,
+        "evidence": {
+          "status": "success",
+          "matchedCount": 1,
+          "eventIds": [
+            "october"
+          ],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 1
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "error": null
+      },
+      "passed": true,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": true,
+        "execution": true,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "time-year-rollover",
+      "run": 1,
+      "tags": [
+        "time",
+        "empty"
+      ],
+      "expected": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2027-01-01",
+            "from": "2027-01-01T00:00:00+08:00",
+            "to": "2027-01-01T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      },
+      "actual": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "明天",
+            "from": "2027-01-01T00:00:00+08:00",
+            "to": "2027-01-01T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 642,
+        "noExecution": false
+      },
+      "executionOracle": {
+        "correct": true,
+        "evidence": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "error": null
+      },
+      "passed": true,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": true,
+        "execution": true,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "time-leap-day",
+      "run": 1,
+      "tags": [
+        "time",
+        "empty"
+      ],
+      "expected": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2028-02-29",
+            "from": "2028-02-29T00:00:00+08:00",
+            "to": "2028-02-29T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      },
+      "actual": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "明天",
+            "from": "2028-02-29T00:00:00+08:00",
+            "to": "2028-02-29T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 830,
+        "noExecution": false
+      },
+      "executionOracle": {
+        "correct": true,
+        "evidence": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "error": null
+      },
+      "passed": true,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": true,
+        "execution": true,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "filter-direction",
+      "run": 1,
+      "tags": [
+        "filter"
+      ],
+      "expected": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-08-01",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": "income"
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 2,
+          "eventIds": [],
+          "ledgerIds": [
+            "salary",
+            "refund"
+          ],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 2
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 100500,
+            "netCents": 100500
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      },
+      "actual": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "上个月",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": "income"
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 2,
+          "eventIds": [],
+          "ledgerIds": [
+            "salary",
+            "refund"
+          ],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 2
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 100500,
+            "netCents": 100500
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 673,
+        "noExecution": false
+      },
+      "executionOracle": {
+        "correct": true,
+        "evidence": {
+          "status": "success",
+          "matchedCount": 2,
+          "eventIds": [],
+          "ledgerIds": [
+            "salary",
+            "refund"
+          ],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 2
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 100500,
+            "netCents": 100500
+          }
+        },
+        "error": null
+      },
+      "passed": true,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": true,
+        "execution": true,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "filter-title",
+      "run": 1,
+      "tags": [
+        "filter"
+      ],
+      "expected": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-09-07",
+            "from": "2026-09-07T00:00:00+08:00",
+            "to": "2026-09-07T23:59:59+08:00"
+          },
+          "filters": {
+            "title": "产品评审",
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 1,
+          "eventIds": [
+            "review"
+          ],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 1
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      },
+      "actual": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "明天",
+            "from": "2026-09-07T00:00:00+08:00",
+            "to": "2026-09-07T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 4,
+          "eventIds": [
+            "utc",
+            "morning",
+            "review",
+            "afternoon"
+          ],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 4
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 823,
+        "noExecution": false
+      },
+      "executionOracle": {
+        "correct": true,
+        "evidence": {
+          "status": "success",
+          "matchedCount": 1,
+          "eventIds": [
+            "review"
+          ],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 1
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "error": null
+      },
+      "passed": false,
+      "effectivePassed": false,
+      "checks": {
+        "decision": true,
+        "plan": false,
+        "execution": false,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "agg-average",
+      "run": 1,
+      "tags": [
+        "aggregation"
+      ],
+      "expected": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-08-01",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": "expense"
+          },
+          "aggregation": {
+            "op": "average",
+            "field": "amountCents"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 2,
+          "eventIds": [],
+          "ledgerIds": [
+            "transport",
+            "expense"
+          ],
+          "aggregation": {
+            "op": "average",
+            "field": "amountCents",
+            "value": 3200,
+            "sumCents": 6400,
+            "sampleCount": 2
+          },
+          "totals": {
+            "expenseCents": 6400,
+            "incomeCents": 0,
+            "netCents": -6400
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      },
+      "actual": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "上个月",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": "expense"
+          },
+          "aggregation": {
+            "op": "average",
+            "field": "amountCents"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 2,
+          "eventIds": [],
+          "ledgerIds": [
+            "transport",
+            "expense"
+          ],
+          "aggregation": {
+            "op": "average",
+            "field": "amountCents",
+            "value": 3200,
+            "sumCents": 6400,
+            "sampleCount": 2
+          },
+          "totals": {
+            "expenseCents": 6400,
+            "incomeCents": 0,
+            "netCents": -6400
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 794,
+        "noExecution": false
+      },
+      "executionOracle": {
+        "correct": true,
+        "evidence": {
+          "status": "success",
+          "matchedCount": 2,
+          "eventIds": [],
+          "ledgerIds": [
+            "transport",
+            "expense"
+          ],
+          "aggregation": {
+            "op": "average",
+            "field": "amountCents",
+            "value": 3200,
+            "sumCents": 6400,
+            "sampleCount": 2
+          },
+          "totals": {
+            "expenseCents": 6400,
+            "incomeCents": 0,
+            "netCents": -6400
+          }
+        },
+        "error": null
+      },
+      "passed": true,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": true,
+        "execution": true,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "agg-max",
+      "run": 1,
+      "tags": [
+        "aggregation"
+      ],
+      "expected": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-08-01",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": "expense"
+          },
+          "aggregation": {
+            "op": "max",
+            "field": "amountCents"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 2,
+          "eventIds": [],
+          "ledgerIds": [
+            "transport",
+            "expense"
+          ],
+          "aggregation": {
+            "op": "max",
+            "field": "amountCents",
+            "value": 3800,
+            "sumCents": 6400,
+            "sampleCount": 2
+          },
+          "totals": {
+            "expenseCents": 6400,
+            "incomeCents": 0,
+            "netCents": -6400
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      },
+      "actual": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "上个月",
+            "from": "2026-08-01T00:00:00+08:00",
+            "to": "2026-08-31T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": "expense"
+          },
+          "aggregation": {
+            "op": "max",
+            "field": "amountCents"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 2,
+          "eventIds": [],
+          "ledgerIds": [
+            "transport",
+            "expense"
+          ],
+          "aggregation": {
+            "op": "max",
+            "field": "amountCents",
+            "value": 3800,
+            "sumCents": 6400,
+            "sampleCount": 2
+          },
+          "totals": {
+            "expenseCents": 6400,
+            "incomeCents": 0,
+            "netCents": -6400
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 690,
+        "noExecution": false
+      },
+      "executionOracle": {
+        "correct": true,
+        "evidence": {
+          "status": "success",
+          "matchedCount": 2,
+          "eventIds": [],
+          "ledgerIds": [
+            "transport",
+            "expense"
+          ],
+          "aggregation": {
+            "op": "max",
+            "field": "amountCents",
+            "value": 3800,
+            "sumCents": 6400,
+            "sampleCount": 2
+          },
+          "totals": {
+            "expenseCents": 6400,
+            "incomeCents": 0,
+            "netCents": -6400
+          }
+        },
+        "error": null
+      },
+      "passed": true,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": true,
+        "execution": true,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "tool-task",
+      "run": 1,
+      "tags": [
+        "tool_selection",
+        "empty"
+      ],
+      "expected": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "task",
+          "timeRange": {
+            "label": "2026-09-06",
+            "from": "2026-09-06T00:00:00+08:00",
+            "to": "2026-09-06T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "task"
+          }
+        ]
+      },
+      "actual": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "task",
+          "timeRange": {
+            "label": "今天",
+            "from": "2026-09-06T00:00:00+08:00",
+            "to": "2026-09-06T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "task"
+          }
+        ],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 658,
+        "noExecution": false
+      },
+      "executionOracle": {
+        "correct": true,
+        "evidence": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "error": null
+      },
+      "passed": true,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": true,
+        "execution": true,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "empty-category",
+      "run": 1,
+      "tags": [
+        "empty",
+        "multi_condition"
+      ],
+      "expected": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-09-01",
+            "from": "2026-09-01T00:00:00+08:00",
+            "to": "2026-09-30T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": "工资",
+            "direction": "income"
+          },
+          "aggregation": {
+            "op": "sum",
+            "field": "amountCents"
+          }
+        },
+        "execution": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "sum",
+            "field": "amountCents",
+            "value": 0,
+            "sumCents": 0,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      },
+      "actual": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "本月",
+            "from": "2026-09-01T00:00:00+08:00",
+            "to": "2026-09-30T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": "工资",
+            "direction": "income"
+          },
+          "aggregation": {
+            "op": "sum",
+            "field": "amountCents"
+          }
+        },
+        "execution": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "sum",
+            "field": "amountCents",
+            "value": 0,
+            "sumCents": 0,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ],
+        "source": "rules_fallback",
+        "fallbackReason": "planner_failed",
+        "unchanged": true,
+        "latencyMs": 962,
+        "noExecution": false
+      },
+      "executionOracle": {
+        "correct": true,
+        "evidence": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "sum",
+            "field": "amountCents",
+            "value": 0,
+            "sumCents": 0,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "error": null
+      },
+      "passed": false,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": true,
+        "execution": true,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "empty-title",
+      "run": 1,
+      "tags": [
+        "empty",
+        "filter"
+      ],
+      "expected": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-09-07",
+            "from": "2026-09-07T00:00:00+08:00",
+            "to": "2026-09-07T23:59:59+08:00"
+          },
+          "filters": {
+            "title": "体检",
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      },
+      "actual": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "明天",
+            "from": "2026-09-07T00:00:00+08:00",
+            "to": "2026-09-07T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 4,
+          "eventIds": [
+            "utc",
+            "morning",
+            "review",
+            "afternoon"
+          ],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 4
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 841,
+        "noExecution": false
+      },
+      "executionOracle": {
+        "correct": true,
+        "evidence": {
+          "status": "empty",
+          "matchedCount": 0,
+          "eventIds": [],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 0
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "error": null
+      },
+      "passed": false,
+      "effectivePassed": false,
+      "checks": {
+        "decision": true,
+        "plan": false,
+        "execution": false,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "ambiguous-reference",
+      "run": 1,
+      "tags": [
+        "ambiguous"
+      ],
+      "expected": {
+        "decision": "clarify",
+        "plan": null,
+        "execution": null,
+        "tools": []
+      },
+      "actual": {
+        "decision": "clarify",
+        "plan": null,
+        "execution": null,
+        "tools": [],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 446,
+        "noExecution": true
+      },
+      "executionOracle": null,
+      "passed": true,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": null,
+        "execution": null,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "ambiguous-recent",
+      "run": 1,
+      "tags": [
+        "ambiguous"
+      ],
+      "expected": {
+        "decision": "clarify",
+        "plan": null,
+        "execution": null,
+        "tools": []
+      },
+      "actual": {
+        "decision": "clarify",
+        "plan": null,
+        "execution": null,
+        "tools": [],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 424,
+        "noExecution": true
+      },
+      "executionOracle": null,
+      "passed": true,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": null,
+        "execution": null,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "ambiguous-meeting",
+      "run": 1,
+      "tags": [
+        "ambiguous"
+      ],
+      "expected": {
+        "decision": "clarify",
+        "plan": null,
+        "execution": null,
+        "tools": []
+      },
+      "actual": {
+        "decision": "clarify",
+        "plan": null,
+        "execution": null,
+        "tools": [],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 493,
+        "noExecution": true
+      },
+      "executionOracle": null,
+      "passed": true,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": null,
+        "execution": null,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "ambiguous-object",
+      "run": 1,
+      "tags": [
+        "ambiguous"
+      ],
+      "expected": {
+        "decision": "clarify",
+        "plan": null,
+        "execution": null,
+        "tools": []
+      },
+      "actual": {
+        "decision": "clarify",
+        "plan": null,
+        "execution": null,
+        "tools": [],
+        "source": "rules_fallback",
+        "fallbackReason": "planner_failed",
+        "unchanged": true,
+        "latencyMs": 716,
+        "noExecution": true
+      },
+      "executionOracle": null,
+      "passed": false,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": null,
+        "execution": null,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "tool-mixed-write",
+      "run": 1,
+      "tags": [
+        "tool_selection",
+        "ambiguous"
+      ],
+      "expected": {
+        "decision": "clarify",
+        "plan": null,
+        "execution": null,
+        "tools": []
+      },
+      "actual": {
+        "decision": "clarify",
+        "plan": null,
+        "execution": null,
+        "tools": [],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 746,
+        "noExecution": true
+      },
+      "executionOracle": null,
+      "passed": true,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": null,
+        "execution": null,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "multi-afternoon-title",
+      "run": 1,
+      "tags": [
+        "multi_condition",
+        "time",
+        "filter"
+      ],
+      "expected": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "2026-09-07",
+            "from": "2026-09-07T12:00:00+08:00",
+            "to": "2026-09-07T17:59:59+08:00"
+          },
+          "filters": {
+            "title": "产品评审",
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 1,
+          "eventIds": [
+            "review"
+          ],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 1
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ]
+      },
+      "actual": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "schedule",
+          "timeRange": {
+            "label": "明天下午",
+            "from": "2026-09-07T12:00:00+08:00",
+            "to": "2026-09-07T17:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": null,
+            "direction": null
+          },
+          "aggregation": {
+            "op": "none"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 2,
+          "eventIds": [
+            "review",
+            "afternoon"
+          ],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 2
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "schedule"
+          }
+        ],
+        "source": "model",
+        "fallbackReason": null,
+        "unchanged": true,
+        "latencyMs": 722,
+        "noExecution": false
+      },
+      "executionOracle": {
+        "correct": true,
+        "evidence": {
+          "status": "success",
+          "matchedCount": 1,
+          "eventIds": [
+            "review"
+          ],
+          "ledgerIds": [],
+          "aggregation": {
+            "op": "none",
+            "value": null,
+            "sumCents": null,
+            "sampleCount": 1
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 0,
+            "netCents": 0
+          }
+        },
+        "error": null
+      },
+      "passed": false,
+      "effectivePassed": false,
+      "checks": {
+        "decision": true,
+        "plan": false,
+        "execution": false,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    },
+    {
+      "id": "multi-income-day",
+      "run": 1,
+      "tags": [
+        "multi_condition",
+        "aggregation",
+        "filter"
+      ],
+      "expected": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "2026-09-05",
+            "from": "2026-09-05T00:00:00+08:00",
+            "to": "2026-09-05T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": "餐饮",
+            "direction": "income"
+          },
+          "aggregation": {
+            "op": "sum",
+            "field": "amountCents"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 1,
+          "eventIds": [],
+          "ledgerIds": [
+            "yesterday-refund"
+          ],
+          "aggregation": {
+            "op": "sum",
+            "field": "amountCents",
+            "value": 250,
+            "sumCents": 250,
+            "sampleCount": 1
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 250,
+            "netCents": 250
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ]
+      },
+      "actual": {
+        "decision": "execute",
+        "plan": {
+          "version": 2,
+          "kind": "ledger",
+          "timeRange": {
+            "label": "昨天",
+            "from": "2026-09-05T00:00:00+08:00",
+            "to": "2026-09-05T23:59:59+08:00"
+          },
+          "filters": {
+            "title": null,
+            "category": "餐饮",
+            "direction": "income"
+          },
+          "aggregation": {
+            "op": "sum",
+            "field": "amountCents"
+          }
+        },
+        "execution": {
+          "status": "success",
+          "matchedCount": 1,
+          "eventIds": [],
+          "ledgerIds": [
+            "yesterday-refund"
+          ],
+          "aggregation": {
+            "op": "sum",
+            "field": "amountCents",
+            "value": 250,
+            "sumCents": 250,
+            "sampleCount": 1
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 250,
+            "netCents": 250
+          }
+        },
+        "tools": [
+          {
+            "name": "queryRecords",
+            "kind": "ledger"
+          }
+        ],
+        "source": "rules_fallback",
+        "fallbackReason": "planner_failed",
+        "unchanged": true,
+        "latencyMs": 869,
+        "noExecution": false
+      },
+      "executionOracle": {
+        "correct": true,
+        "evidence": {
+          "status": "success",
+          "matchedCount": 1,
+          "eventIds": [],
+          "ledgerIds": [
+            "yesterday-refund"
+          ],
+          "aggregation": {
+            "op": "sum",
+            "field": "amountCents",
+            "value": 250,
+            "sumCents": 250,
+            "sampleCount": 1
+          },
+          "totals": {
+            "expenseCents": 0,
+            "incomeCents": 250,
+            "netCents": 250
+          }
+        },
+        "error": null
+      },
+      "passed": false,
+      "effectivePassed": true,
+      "checks": {
+        "decision": true,
+        "plan": true,
+        "execution": true,
+        "no_execution": true,
+        "tool_selection": true,
+        "read_only": true
+      }
+    }
+  ]
+}

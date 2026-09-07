@@ -127,6 +127,7 @@ test("query agent returns schedule results as a UI_POPUP block", async () => {
   });
 
   assert.equal(result.outcome, "query_answered");
+  assert.equal(result.outcome, "query_answered");
   assert.equal(result.queryResult.query_kind, "schedule");
   assert.equal(result.queryResult.query_status, "success");
   assert.equal(result.queryResult.events.length, 1);
@@ -148,6 +149,7 @@ test("query agent resolves next-week meeting questions to the next calendar week
     now
   });
 
+  assert.equal(result.outcome, "query_answered");
   assert.equal(result.queryResult.query_kind, "schedule");
   assert.equal(result.queryResult.query_status, "success");
   assert.equal(result.queryResult.time_range.label, "下周三");
@@ -165,6 +167,7 @@ test("query agent summarizes ledger expenses and still uses UI_POPUP", async () 
     now
   });
 
+  assert.equal(result.outcome, "query_answered");
   assert.equal(result.queryResult.query_kind, "ledger");
   assert.equal(result.queryResult.query_status, "success");
   assert.equal(result.queryResult.ledger.totalExpenseCents, 3800);
@@ -182,6 +185,7 @@ test("query agent summarizes last-month delivery expenses as a popup payload", a
     now
   });
 
+  assert.equal(result.outcome, "query_answered");
   assert.equal(result.queryResult.query_kind, "ledger");
   assert.equal(result.queryResult.query_status, "success");
   assert.equal(result.queryResult.time_range.label, "上个月");
@@ -199,6 +203,7 @@ test("query agent returns an empty popup when no records match", async () => {
     now
   });
 
+  assert.equal(result.outcome, "query_answered");
   assert.equal(result.queryResult.query_kind, "task");
   assert.equal(result.queryResult.query_status, "empty");
   assert.equal(result.queryResult.events.length, 0);

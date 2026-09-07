@@ -30,14 +30,15 @@ export function stageRecordResult(current: TimelyState, base: TimelyState, next:
 }
 
 export function confirmRecordDraft(current: TimelyState): TimelyState {
+  if (current.writeSession?.recovery) return appendRecordReply(current, "还有未处理的补充，请先继续说明或取消这次记录。");
   const draft = current.pendingConfirmation;
   if (!draft) return current;
-  const clean = { ...current, pendingConfirmation: null };
+  const clean = { ...current, pendingConfirmation: null, ...(current.writeSession !== undefined ? { writeSession: null } : {}) };
   const result = commitConfirmedRecord(current);
-  if (!result.ok) return appendRecordReply(clean, result.message);
-  return appendRecordReply({ ...clean, ...result.value }, `${draft.before ? "已修改" : "已记录"}。${draft.summary}。`);
+  if (!result.ok) return appendRecordReply(current.writeSession ? current : clean, result.message);
+  return appendRecordReply({ ...clean, ...result.value }, `${draft.kind === "event" && draft.record.status === "cancelled" ? "已取消" : draft.before ? "已修改" : "已记录"}。${draft.summary}。`);
 }
 
 export function discardRecordDraft(current: TimelyState): TimelyState {
-  return appendRecordReply({ ...current, pendingConfirmation: null }, "已取消这次记录。");
+  return appendRecordReply({ ...current, pendingConfirmation: null, ...(current.writeSession !== undefined ? { writeSession: null } : {}) }, "已取消这次记录。");
 }

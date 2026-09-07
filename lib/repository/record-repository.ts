@@ -1,12 +1,12 @@
 import type { CalendarEvent, LedgerEntry, PendingConfirmation, TimelyState } from "../types";
-import type { OperationResult, QueryPlan } from "../query-contract";
-import { queryPlanSchema } from "../query-contract";
+import type { OperationResult, QueryPlan, QueryPlanV2 } from "../query-contract";
+import { queryPlanSchema, queryPlanV2Schema } from "../query-contract";
 import { eventSchema, ledgerSchema } from "../record-validation";
 export type RecordSnapshot = Pick<TimelyState, "events" | "ledgerEntries">;
 export type RecordCandidate = Pick<PendingConfirmation, "kind" | "record">;
 export interface RecordRepository {
   snapshot(): RecordSnapshot;
-  query(plan: QueryPlan): RecordSnapshot;
+  query(plan: QueryPlan | QueryPlanV2): RecordSnapshot;
   commit(candidate: RecordCandidate, expectedBefore?: CalendarEvent | LedgerEntry): OperationResult<RecordSnapshot>;
 }
 export function createRecordRepository(state: RecordSnapshot): RecordRepository {
@@ -15,7 +15,8 @@ export function createRecordRepository(state: RecordSnapshot): RecordRepository 
   return {
     snapshot,
     query(input) {
-      const plan = queryPlanSchema.parse(input);
+      const parsed = input.version === 2 ? queryPlanV2Schema.parse(input) : queryPlanSchema.parse(input);
+      const plan = parsed.version === 2 ? { ...parsed, ...parsed.filters } : parsed;
       const from = Date.parse(plan.timeRange.from), to = Date.parse(plan.timeRange.to);
       const inRange = (time: string) => Date.parse(time) >= from && Date.parse(time) <= to;
       if (plan.kind === "task") return { events: [], ledgerEntries: [] };

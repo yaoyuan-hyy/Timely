@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Menu, MessageCircle, ReceiptText, Settings, Trash2, X } from "lucide-react";
+import { CalendarDays, Menu, MessageCircle, ReceiptText, Settings, Trash2, X, Layers3, ShieldCheck, ArchiveRestore } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ChatView } from "@/components/timely/chat-view";
 import { CalendarView } from "@/components/timely/calendar-view";
@@ -12,6 +12,7 @@ import { findPossibleDuplicate } from "@/lib/record-dedup";
 import { useLocalStorageState } from "@/hooks/use-local-storage-state";
 import { useRecordSubmit } from "@/hooks/use-record-submit";
 import { useTimelyActions } from "@/hooks/use-timely-actions";
+import { useDialogFocus } from "@/hooks/use-dialog-focus";
 import { initialState } from "@/lib/seed-data";
 import { normalizeTimelyState } from "@/lib/state";
 import { activeEvents, cancelledEvents, sortEventsByTime } from "@/lib/stats";
@@ -19,6 +20,7 @@ import { todayLabel } from "@/lib/time";
 import type { AppView, RecordTarget, TimelyState } from "@/lib/types";
 
 const STORAGE_KEY = "timely-event-record-state-v1";
+const viewTitles: Record<AppView, string> = { chat: "记录与对话", calendar: "日历", ledger: "流水", settings: "设置" };
 
 export function TimelyApp() {
   const [state, setState, isReady, storageError] = useLocalStorageState<TimelyState>(
@@ -29,6 +31,7 @@ export function TimelyApp() {
   const [view, setView] = useState<AppView>("chat");
   const [draft, setDraft] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useDialogFocus(isMenuOpen, () => setIsMenuOpen(false));
   const [showCancelledRecords, setShowCancelledRecords] = useState(false);
   const [recordTarget, setRecordTarget] = useState<RecordTarget | null>(null);
   const { isSubmitting, submitMessage, cancelSubmission, submitError, confirmPending, discardPending, editPending, fallbackNotice, retrySubmission } = useRecordSubmit({ state, setState, draft, setDraft });
@@ -68,6 +71,8 @@ export function TimelyApp() {
       ...current,
       messages: [],
       pendingClarification: null,
+      pendingQueryClarification: null,
+      writeSession: null,
       pendingConfirmation: null,
       pendingEdit: null
     }));
@@ -110,7 +115,18 @@ export function TimelyApp() {
 
   return (
     <main className="app-stage">
-      <section className="phone-shell" aria-label="Timely mobile client">
+      <section className="phone-shell" aria-label="Timely">
+        <aside className="workspace-sidebar" aria-label="工作区导航">
+          <div className="workspace-brand"><span className="brand-mark"><Layers3 size={23} /></span><strong>Timely<span>个人记录空间</span></strong></div>
+          <p className="sidebar-label">我的空间</p>
+          <nav className="workspace-nav" aria-label="主要页面">
+            <NavButton icon={<MessageCircle size={20} />} view="chat" activeView={view} onClick={selectView} />
+            <NavButton icon={<CalendarDays size={20} />} view="calendar" activeView={view} onClick={selectView} />
+            <NavButton icon={<ReceiptText size={20} />} view="ledger" activeView={view} onClick={selectView} />
+            <NavButton icon={<Settings size={20} />} view="settings" activeView={view} onClick={selectView} />
+          </nav>
+          <div className="sidebar-foot"><ShieldCheck size={18} /><div><strong>记录留在本机</strong><p>日常片刻，安心留存。</p></div></div>
+        </aside>
         <header className="app-header">
           <button
             className="menu-trigger"
@@ -124,9 +140,9 @@ export function TimelyApp() {
           </button>
           <div className="app-title">
             <p className="today-text">{todayLabel()}</p>
-            <h1>Timely</h1>
+            <h1>{viewTitles[view]}</h1>
           </div>
-          <button
+          {(isChatView || isCalendarView) && <button
             className={`clear-chat-button ${isCalendarView && showCancelledRecords ? "active" : ""}`}
             type="button"
             title={headerButtonLabel}
@@ -135,8 +151,8 @@ export function TimelyApp() {
             disabled={isHeaderButtonDisabled}
             onClick={handleHeaderAction}
           >
-            <Trash2 size={18} />
-          </button>
+            {isCalendarView ? <ArchiveRestore size={18} /> : <Trash2 size={18} />}
+          </button>}
         </header>
 
         <div
@@ -144,7 +160,7 @@ export function TimelyApp() {
           aria-hidden={!isMenuOpen}
           onClick={() => setIsMenuOpen(false)}
         />
-        <aside className={`side-drawer ${isMenuOpen ? "open" : ""}`} id="timely-drawer" aria-label="主菜单">
+        <aside ref={menuRef} role="dialog" aria-modal="true" className={`side-drawer ${isMenuOpen ? "open" : ""}`} id="timely-drawer" aria-label="主菜单" hidden={!isMenuOpen}>
           <div className="drawer-head">
             <div>
               <p className="eyebrow">Menu</p>
@@ -212,11 +228,17 @@ export function TimelyApp() {
               eventCount={visibleEvents.length}
               cancelledCount={cancelledRecordEvents.length}
               ledgerCount={state.ledgerEntries.length}
-              hasPendingClarification={Boolean(state.pendingClarification)}
+              hasPendingClarification={Boolean(state.pendingClarification || state.pendingQueryClarification || state.writeSession)}
               onReset={resetDemoData}
             ><DataTransfer state={state} setState={setState} /></SettingsView>
           )}
         </section>
+        <nav className="mobile-navigation" aria-label="底部导航">
+          <NavButton icon={<MessageCircle size={20} />} view="chat" activeView={view} onClick={selectView} />
+          <NavButton icon={<CalendarDays size={20} />} view="calendar" activeView={view} onClick={selectView} />
+          <NavButton icon={<ReceiptText size={20} />} view="ledger" activeView={view} onClick={selectView} />
+          <NavButton icon={<Settings size={20} />} view="settings" activeView={view} onClick={selectView} />
+        </nav>
       </section>
     </main>
   );
