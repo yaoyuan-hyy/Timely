@@ -5,7 +5,7 @@ import type { AppView } from "@/lib/types";
 
 const viewLabels: Record<AppView, string> = {
   chat: "对话",
-  calendar: "记录",
+  calendar: "日历",
   ledger: "流水",
   settings: "设置"
 };
@@ -24,7 +24,7 @@ export function NavButton({
   const isActive = view === activeView;
 
   return (
-    <button className={`nav-button ${isActive ? "active" : ""}`} type="button" onClick={() => onClick(view)}>
+    <button className={`nav-button ${isActive ? "active" : ""}`} aria-current={isActive ? "page" : undefined} type="button" onClick={() => onClick(view)}>
       {icon}
       <span>{viewLabels[view]}</span>
     </button>

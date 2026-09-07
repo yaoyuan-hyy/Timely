@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { runQueryAgentWorkflow } from "./agent/query-workflow";
+import { runQueryAgentWorkflow } from "./agent/query-workflow-v1";
 import type { QueryPlanner } from "./query-contract";
 import type { TimelyState } from "./types";
 import { recordDateTime } from "./record-validation";

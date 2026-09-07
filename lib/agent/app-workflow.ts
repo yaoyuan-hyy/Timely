@@ -1,15 +1,16 @@
 import { Annotation, END, START, StateGraph } from "@langchain/langgraph";
 import { createLocalId } from "../local-id";
 import { toShanghaiIso } from "../time";
-import { runQueryAgentWorkflow, isLikelyQueryIntent } from "./query-workflow";
+import { runQueryAgentWorkflow, isLikelyQueryIntent, isNewRecordDuringQuery } from "./query-workflow";
 import { runRecordAgentWorkflow } from "./record-workflow";
 import type { ParseRecordInput, RecordWorkflowOutcome } from "./record-workflow";
 import type { ConversationMessage, TimelyState } from "../types";
 import type { QueryPlanner } from "../query-contract";
+import type { QueryAgentOutcome } from "./query-workflow";
 
 export type TimelyAgentName = "query" | "write" | "chat";
 
-export type TimelyAgentOutcome = RecordWorkflowOutcome | "query_answered" | "chat_replied";
+export type TimelyAgentOutcome = RecordWorkflowOutcome | QueryAgentOutcome | "chat_replied";
 
 export type TimelyAgentTraceStep =
   | "classify_intent"
@@ -23,6 +24,7 @@ type TimelyAgentOptions = {
   pendingClarificationTtlMs?: number;
   parseRecordInput?: ParseRecordInput;
   parseQueryPlan?: QueryPlanner;
+  parseQueryDecision?: QueryPlanner;
 };
 
 export type TimelyAgentWorkflowResult = {
@@ -56,13 +58,13 @@ export function createTimelyAgentWorkflow(options: TimelyAgentOptions = {}) {
     const normalizedInput = normalizeText(state.input);
     return {
       normalizedInput,
-      agent: selectAgent(normalizedInput, state.currentState, Boolean(options.parseRecordInput)),
+      agent: selectAgent(normalizedInput, state.currentState, Boolean(options.parseRecordInput), now),
       trace: ["classify_intent" as const]
     };
   }
 
   async function runQueryAgent(state: TimelyAgentWorkflowState) {
-    const result = await runQueryAgentWorkflow(state.currentState, state.input, { now, createId, parseQueryPlan: options.parseQueryPlan });
+    const result = await runQueryAgentWorkflow(state.currentState, state.input, { now, createId, parseQueryPlan: options.parseQueryPlan, parseQueryDecision: options.parseQueryDecision });
 
     return {
       state: result.state,
@@ -80,7 +82,7 @@ export function createTimelyAgentWorkflow(options: TimelyAgentOptions = {}) {
     });
 
     return {
-      state: result.state,
+      state: state.currentState.pendingQueryClarification ? { ...result.state, pendingQueryClarification: null } : result.state,
       outcome: result.outcome,
       trace: ["write_agent" as const]
     };
@@ -100,7 +102,8 @@ export function createTimelyAgentWorkflow(options: TimelyAgentOptions = {}) {
       state: {
         ...state.currentState,
         messages: [...state.currentState.messages, userMessage, assistantMessage],
-        pendingClarification: null
+        pendingClarification: null,
+        ...(state.currentState.pendingQueryClarification ? { pendingQueryClarification: null } : {})
       },
       outcome: "chat_replied" as const,
       trace: ["chat_agent" as const]
@@ -153,7 +156,9 @@ function routeByAgent(state: TimelyAgentWorkflowState) {
   return `${state.agent ?? "chat"}_agent`;
 }
 
-function selectAgent(input: string, current: TimelyState, hasAi: boolean): TimelyAgentName {
+function selectAgent(input: string, current: TimelyState, hasAi: boolean, now: Date): TimelyAgentName {
+  const pendingQuery = current.pendingQueryClarification;
+  if (pendingQuery && now.getTime() >= pendingQuery.createdAt && now.getTime() - pendingQuery.createdAt < 15 * 60 * 1000 && !isNewRecordDuringQuery(input)) return "query";
   if (current.pendingClarification && !isLikelyQueryIntent(input)) return "write";
   if (isLikelyQueryIntent(input)) {
     return "query";

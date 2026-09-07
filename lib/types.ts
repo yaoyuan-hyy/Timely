@@ -98,6 +98,7 @@ export type PendingClarification =
     };
 
 export type TimelyState = {
+  writeSession?: import("./write-session").WriteSession | null;
   events: CalendarEvent[];
   reminders: Reminder[];
   ledgerEntries: LedgerEntry[];
@@ -105,6 +106,7 @@ export type TimelyState = {
   pendingClarification: PendingClarification | null;
   pendingConfirmation?: PendingConfirmation | null;
   pendingEdit?: PendingEdit | null;
+  pendingQueryClarification?: { input: string; question: string; reason: string; createdAt: number; referenceNow: string } | null;
 };
 
 export type RecordTarget = { view: "calendar" | "ledger"; recordId: string; dayKey?: string; monthKey?: string };

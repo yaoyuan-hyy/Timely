@@ -211,6 +211,8 @@ export function CalendarView({
                     className={`month-day ${day.isToday ? "today" : ""} ${day.events.length ? "has-events" : ""}`}
                     type="button"
                     key={day.key}
+                    aria-label={`${day.date.getFullYear()}年${day.date.getMonth() + 1}月${day.date.getDate()}日，${day.events.length}条记录`}
+                    aria-current={day.isToday ? "date" : undefined}
                     onClick={() => openDay(day.date, day.key)}
                   >
                     <strong>{day.date.getDate()}</strong>
@@ -224,10 +226,10 @@ export function CalendarView({
             </div>
           </section>
 
-          {showCancelledRecords && (
-            <CancelledRecords events={cancelledEvents} onRestore={onRestore} onPermanentDelete={onPermanentDelete} />
-          )}
         </section>
+      )}
+      {showCancelledRecords && (
+        <CancelledRecords events={cancelledEvents} onRestore={onRestore} onPermanentDelete={onPermanentDelete} />
       )}
     </div>
   );
@@ -243,7 +245,7 @@ function CancelledRecords({
   onPermanentDelete: (eventId: string) => void;
 }) {
   if (events.length === 0) {
-    return null;
+    return <section className="cancelled-records cancelled-records-spring" aria-label="已取消记录"><h2>已取消记录</h2><p className="quiet-copy">没有已取消的记录。</p></section>;
   }
 
   return (

@@ -1,14 +1,20 @@
 # Timely 技术架构记录
 
-> 更新日期：2026-09-06
+> 更新日期：2026-09-07
 > 产品形态：手机优先、本地优先的自然语言个人记录 Web/PWA
-> 当前重点：LangGraph supervisor + write agent + query agent + local JSON datastore
+> 当前重点：统一 InputDecision + 字段草稿/上下文恢复 + Query Agent v2 + local JSON datastore
 
 ---
 
+## 当前 UI 输入链路（2026-09-07）
+
+`ChatView / useRecordSubmit` → `/api/input-decision` → InputDecision 校验 → `runInputSession`。写入决策按字段来源合并草稿，产生确认提案，经确认 Tool/Repository 单条提交；查询决策交给现有 LangGraph Query Agent v2 确定性执行，不进行第二次查询模型解析。旧 supervisor/write workflow 和 `/api/record-input` 留作兼容路径，下面的早期描述属于历史架构。
+
+上下文恢复按原话、来源轮次、时间、版本和有效期管理，独立于有效草稿。恢复时允许一次有界校验修复，失败仍不写入。详见 [上下文恢复契约](input-context-recovery.md)。
+
 ## 2026-09-06：Repository、Tool 与查询计划边界
 
-查询链路：`query-workflow` → `planQuery`（默认规则，可注入模型）→ `QueryPlan v1` 校验 → `createQueryTools().queryRecords` → `RecordRepository.query` → 本地汇总与 UI_POPUP。
+查询链路：`query-workflow` → `planQueryV2`（默认规则，可注入模型）→ execute / clarify / unsupported；仅 execute 经 `QueryPlanV2` 校验 → `createQueryTools().queryRecords` → `RecordRepository.query` → deterministic executor → UI_POPUP。
 
 - `lib/query-contract.ts`：严格计划 schema，闭区间时间范围、类型匹配的 nullable 条件、稳定 OperationResult。
 - `lib/query-baseline.ts`：原规则解析独立保留；明确收支过滤，供模型对照。
@@ -252,10 +258,11 @@ AI 结果进入 domain 层后仍会校验字段自洽性。不自洽、超时或
 ```text
 START
   -> normalize_query
-  -> classify_query
-  -> query_local_database
-  -> format_popup_response
-  -> END
+  -> decide_query
+      -> clarify -> format_clarification -> END
+      -> unsupported -> format_unsupported -> END
+      -> execute -> validate_query_plan -> query_records
+          -> aggregate_records -> format_query_result -> END
 ```
 
 Query workflow state：
@@ -266,23 +273,20 @@ Query workflow state：
   input: string;
   normalizedInput: string;
   now: Date;
-  queryPlan: {
-    kind: "schedule" | "ledger" | "task";
-    timeRange: {
-      label: string;
-      from: string;
-      to: string;
-    };
-    category: string | null;
-    title: string | null;
-  } | null;
+  decision: QueryDecisionV2 | null;
+  plan: QueryPlanV2 | null;
+  execution: QueryExecutionResult | null;
   queryResult: UiPopupPayload | null;
   state: TimelyState | null;
   trace: Array<
     | "normalize_query"
-    | "classify_query"
-    | "query_local_database"
-    | "format_popup_response"
+    | "decide_query"
+    | "validate_query_plan"
+    | "query_records"
+    | "aggregate_records"
+    | "format_query_result"
+    | "format_clarification"
+    | "format_unsupported"
   >;
 }
 ```
@@ -294,6 +298,7 @@ Query workflow state：
 - 待办/任务查询：当前没有任务模型，因此返回结构化 empty popup。
 - 时间窗口：支持今天、明天、后天、昨天、上个月、下个月、本月、上/下/本周几，以及上午、下午、晚上等日内窗口。
 - 类别推断：外卖/午饭/晚饭等归为餐饮，打车/地铁等归为交通，工资/报销归为对应收入分类。
+- v2 planner 只输出 `QueryDecisionV2`；execute 分支由 `queryRecords` 取回记录，再由 `lib/query-executor.ts` 确定性计算 count/sum/average/max/min。clarify 和 unsupported 分支不读取记录、不调用工具。
 
 查询结果会写入 `messages`：
 
@@ -306,7 +311,7 @@ assistant message =
   ```
 ````
 
-即使没有记录，也必须输出 `query_status: "empty"` 的 `UI_POPUP`，让前端显示“暂无记录”的结构化窗口。
+execute 没有记录时仍输出 `query_status: "empty"` 的 `UI_POPUP`；clarify 和 unsupported 输出简短文本，不输出查询弹窗。平均值取整到分，空 average/max/min 为 null，空 count/sum 为 0。
 
 ---
 

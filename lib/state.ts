@@ -15,8 +15,14 @@ export function normalizeTimelyState(value: unknown, fallback: TimelyState): Tim
     messages: Array.isArray(parsed.messages)
       ? parsed.messages.map(normalizeMessage).filter(isConversationMessage)
       : fallback.messages,
-    pendingClarification: normalizePendingClarification(parsed.pendingClarification)
+    pendingClarification: normalizePendingClarification(parsed.pendingClarification),
+    ...(parsed.pendingQueryClarification !== undefined ? { pendingQueryClarification: normalizeQueryClarification(parsed.pendingQueryClarification) } : {})
   };
+}
+
+function normalizeQueryClarification(value: unknown): TimelyState["pendingQueryClarification"] {
+  if (!isRecord(value) || typeof value.input !== "string" || !value.input || value.input.length > 4000 || typeof value.question !== "string" || value.question.length > 120 || typeof value.reason !== "string" || !["missing_scope", "ambiguous_reference", "mixed_intent", "insufficient_information"].includes(value.reason) || typeof value.createdAt !== "number" || !Number.isFinite(value.createdAt) || typeof value.referenceNow !== "string" || !Number.isFinite(Date.parse(value.referenceNow))) return null;
+  return { input: value.input, question: value.question, reason: value.reason, createdAt: value.createdAt, referenceNow: value.referenceNow };
 }
 
 

@@ -2,15 +2,14 @@
 
 Timely is a mobile-first Web/PWA client for natural-language personal records.
 
+The current interface uses a persistent desktop sidebar and mobile bottom navigation, with a shared visual system for chat, calendar, ledger, and local data settings. The primary implementation remains the Next app; `public/app.js` is a legacy static preview.
+
 The product is not a reminder app, planning app, task manager, focus timer, or productivity analytics tool. The current app is event-first, with an independent local ledger-record surface and local query feedback already present:
 
 ```text
 Natural-language input
-  -> local correction / relative-reference resolution
-  -> LangGraph supervisor agent
-  -> write agent or query agent
-  -> optional AI unified parse for writes, with local fallback
-  -> local query over TimelyState for personal-data questions
+  -> unified InputDecision planner (/api/input-decision)
+  -> validated write patches / unresolved context / read-only Query Agent v2
   -> preview a single event/ledger draft
   -> confirm to commit that record into TimelyState
   -> persist in localStorage
@@ -48,6 +47,8 @@ http://localhost:3000
 The server uses `deepseek-v4-flash` at `https://api.deepseek.com/chat/completions`.
 Set `DEEPSEEK_API_KEY` in `.env.local`; `DEEPSEEK_BASE_URL` and `DEEPSEEK_MODEL` are optional overrides. Restart the dev server after changing environment variables. Existing `OPENAI_*` / `MINIMAX_*` variables no longer configure this app.
 
+Next starts both the browser UI and API routes with this one command. Failed or ambiguous inputs retain bounded unresolved context for follow-up; corrections preserve validated fields, and unresolved corrections block saving the old preview. See [input context recovery](docs/architecture/input-context-recovery.md). Reload clears unfinished write sessions.
+
 With the server running, `npm run test:ai` checks real event, ledger, and clarification parsing (four API requests). This is separate from `npm test`, which uses mocked HTTP and requires no token. These checks parse sample inputs without writing browser records.
 
 ## Current App
@@ -59,7 +60,7 @@ With the server running, `npm run test:ai` checks real event, ledger, and clarif
 - Settings exports versioned JSON backups and previews imports before merging. Same-ID conflicts preserve current records. Backups include events (including cancelled events) and ledger entries, excluding chat and unconfirmed work.
 - Mobile-first Timely app shell.
 - Four views: Chat, Records, Ledger, Settings.
-- Natural-language event creation and deletion through `/api/record-input`, with local fallback.
+- Natural-language creation and correction through `/api/input-decision`; `/api/record-input` remains a v1 compatibility route. Offline continuation is limited to an unambiguous scalar amount when exactly that slot is missing and no recovery is pending.
 - Natural-language schedule/ledger/task-like queries through a local query agent.
 - Event records support past and future time points, one concise clarification, cancellation, restoration, and permanent deletion from cancelled records.
 - Ledger entries are a separate record type; they do not reuse `CalendarEvent`.
@@ -71,7 +72,9 @@ With the server running, `npm run test:ai` checks real event, ledger, and clarif
 
 For capability-level evaluation, run `npm run bench:queries` (18 frozen regression cases) or add `-- --live` for DeepSeek. The benchmark contains 28 total cases across seven dimensions and supports `--runs`, `--compare`, and `--gate`. See [benchmark methodology and measured results](docs/evals/query-benchmark-v1.md); the earlier six-case eval remains a smoke suite, not an accuracy estimate.
 
-Query execution now has explicit layers: `QueryPlan v1 → query tools → RecordRepository → local UI_POPUP formatting`. The default planner remains rule-based; `parseQueryPlan` can be injected for model comparison. The query model receives only synthetic/user query text and the current time, never the record collection. Confirmed drafts use a separate UI-only commit capability with conflict checks. Browser persistence uses an injected StateStorage adapter.
+Query Agent v2 uses `QueryDecision → execute / clarify / unsupported`. Execute validates a declarative `QueryPlanV2`, retrieves records through `queryRecords` and `RecordRepository`, then computes count/sum/average/max/min locally before UI_POPUP formatting. Clarify and unsupported never call query tools. The default planner remains rule-based; inject `parseQueryDecision` to evaluate the model. The provider receives only input and reference time, never records. Query follow-ups use separate local conversation state with a 15-minute lifetime. Confirmed drafts retain their separate UI-only commit capability.
+
+Run `npm run test:query-v2` for v2 regressions and `npm run bench:queries:v2 -- --live` for explicit model evaluation. The v2 dataset preserves all 28 v1 inputs/IDs/splits and adds decision/plan/execution/E2E scores. `bench:queries` and `eval:queries` retain the historical v1 workflow for comparison; reports with different scorer versions are not directly comparable. See [v2 methodology](docs/evals/query-benchmark-v2.md).
 
 Run `npm run eval:queries` for the fixed offline baseline. Run `npm run eval:queries -- --live` to compare DeepSeek on the same six synthetic cases using server environment configuration. Reports separate plan accuracy, result accuracy and fallback counts; a fallback never earns model credit. The app does not switch to model query parsing automatically.
 
@@ -112,9 +115,11 @@ The query agent in `lib/agent/query-workflow.ts` is local-first:
 
 ```text
 normalize_query
-  -> classify_query
-  -> query_local_database
-  -> format_popup_response
+  -> decide_query
+      -> clarify -> format_clarification -> END
+      -> unsupported -> format_unsupported -> END
+      -> execute -> validate_query_plan -> query_records
+          -> aggregate_records -> format_query_result -> END
 ```
 
 It queries `TimelyState.events` and `TimelyState.ledgerEntries`, including common Chinese time windows such as `明天下午`, `昨晚`, and `下周三`, then emits a response with a short intro plus a strict UI trigger block:
@@ -127,7 +132,7 @@ It queries `TimelyState.events` and `TimelyState.ledgerEntries`, including commo
 ```
 ````
 
-If no records match, the query agent still emits `UI_POPUP` with `query_status: "empty"` so the frontend can show a structured empty state.
+If execution matches no records, the agent emits `UI_POPUP` with `query_status: "empty"`. Clarification and unsupported decisions emit short text without a popup. Average rounds half-up to integer cents and retains the numerator/count for verification; empty average/max/min are null, while empty count/sum are zero. Net income uses signed income-minus-expense cents.
 
 The chat submit hook (`hooks/use-record-submit.ts`) calls `runTimelyAgentWorkflow`, so the product path and the tested multi-agent path are the same path. The API route shape is unchanged:
 

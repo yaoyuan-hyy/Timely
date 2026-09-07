@@ -1,6 +1,37 @@
 # Timely 项目进度
 
-更新时间：2026-09-06
+更新时间：2026-09-07
+
+## 2026-09-07：上下文恢复落地
+
+- 新增 `writeSession.recovery`：与有效草稿隔离，保存未决原话、每轮时间/ID、版本、失败原因/问题和有效期；不接纳失败模型字段。最多 4 轮 / 12000 字符 / 15 分钟，下一次输入检查过期，刷新或取消清除。
+- 决策明确 continue/replace，旧字段有来源轮次，相对日期按来源时间计算；恢复 create/revise 和草稿身份由实际状态决定。对未处理的输入做覆盖检查，允许一次携带程序校验反馈的重新解析，共享 15 秒截止时间。
+- UI 显示未决输入；未完成的补充同时阻止确认按钮和确认 Tool 提交旧预览。新旧异步结果、失败重试仍经过会话状态比较，不覆盖当前记录。
+- 全量测试、类型、lint、build、diff 检查通过，Write v2 测试 34 项。真实恢复专项 6/6（8 次请求，含 2 次修复，fallback 0）；原七条严格 6/7，日期丢失修复，剩余分类 `午饭`/`餐饮` 差异。详见 `docs/evals/input-recovery.md`。
+
+## 2026-09-07：Write Flow v2 真实多轮评测
+
+- 已解除沙箱网络限制完成真实 DeepSeek 三轮评测，同一 7 条合成样例每轮严格 6/7（85.7%），累计 18/21，fallback 0、网络/HTTP 失败 0。仅 7 个独立样例，不代表生产泛化准确率。
+- 失败都在“昨天午饭 → 花35元”：初轮解析/校验失败后未保留原输入上下文，下一轮作为新建，日期变为今天。初轮模型决策有波动，包含无效金额与错误查询过滤；分类和意图 gold 也需要明确产品规则。
+- 三轮所有输入均未提前修改记录；日期金额纠正、清空可选字段、时间补充、非法日期拒绝、多操作澄清和确认写入六个样例通过。
+- 本轮仅补强计分器和评测记录，未改生产 prompt 或用例答案。报告、复现命令和覆盖限制见 `docs/evals/2026-09-07-write-flow-v2-live.md`。Write v2 尚不能因此标记为全面验收完成。
+
+## 2026-09-07：真实 v2 评测与界面重构
+
+- 改版前全量 `npm test` 通过，真实模型 test 集严格 12/18（66.7%），3 条规则回退单独计数；完整结果保存到 `docs/evals/query-benchmark-v2-results.json`。
+- 平均值/最大值通过；剩余错误为标题过滤遗漏与 planner failure。审查移除了为可见样例扩充的标题词汇后，规则全集为 25/28；保留失败，不将回归分数作为泛化准确率。
+- UI 改为桌面常驻侧栏、手机底部导航，移除固定手机外框；聊天增加可编辑的输入示例，重整最近记录与输入区；流水采用统一线性图标。
+- 统一日历、流水、设置、结果与编辑弹窗的排版、色彩、边框和反馈；弹窗支持 Escape、Tab 焦点约束与关闭后焦点恢复。
+- 改版后 `npm test`、typecheck、lint、生产 build、静态 JS 语法与 diff 检查通过；构建发现并修复了 CSS 格式化引入的伪类空格错误。已查看 1280px 桌面与 390px 手机界面，验证示例填入和记账弹窗 Escape 关闭/焦点恢复。查询提交后的最终手机弹窗及更窄屏幕尚未完成浏览器验收：工具自动审批因 usage limit 拒绝后续操作，不将这些项目记为已通过。
+
+## 2026-09-06：Query Agent v2
+
+- Query Agent 已升级为 `QueryDecisionV2`：`execute`、`clarify`、`unsupported` 三种决策；clarify/unsupported 不调用查询工具。
+- `QueryPlanV2` 统一承载 kind、Shanghai 时间范围、filters 和 none/count/sum/average/max/min 聚合；`lib/query-executor.ts` 负责确定性计算，LLM 不接收记录、不计算金额。
+- Repository 只做 records retrieval/filtering，仍由单一只读 `queryRecords` capability 执行；查询结果继续适配现有 UI_POPUP。
+- 新增查询澄清状态和 15 分钟短答上下文；明确新的记录输入会离开查询澄清路径。
+- 新增 v2 benchmark：保留 v1 的 28 条样例和 IDs，分开统计 decision、plan、execution、tool selection、read-only 与 E2E；真实测量见 2026-09-07 更新。
+- v2 实现计划位于 `docs/superpowers/plans/2026-09-06-query-agent-v2.md`；当前尚未提交 commit。
 
 ## 2026-09-06：Query benchmark v1
 

@@ -14,6 +14,7 @@ for (const example of cases) test(`query contract: ${example.id}`, async () => {
   const state = queryFixture();
   const before = structuredClone(state);
   const { queryResult: result } = await runQueryAgentWorkflow(state, example.input, { now: queryNow });
+  assert.ok(result);
   assert.equal(result.query_kind, example.kind);
   assert.deepEqual(result.events.map(e => e.id), example.eventIds);
   assert.deepEqual(result.ledger.entries.map(e => e.id), example.ledgerIds);
@@ -28,6 +29,7 @@ test("injected model plans execute against local records and expose their source
   const state = queryFixture();
   const result = await runQueryAgentWorkflow(state, "下一天午后的安排", { now: queryNow, parseQueryPlan: async () => buildQueryPlan("明天下午有哪些会议？", queryNow) });
   assert.equal(result.source, "model");
+  assert.equal(result.outcome, "query_answered");
   assert.deepEqual(result.queryResult.events.map(e => e.id), ["afternoon"]);
   assert.deepEqual(result.state.events, state.events);
 });
@@ -36,6 +38,7 @@ test("model errors and illegal write instructions fall back without mutating rec
     const state = queryFixture();
     const result = await runQueryAgentWorkflow(state, "明天有什么安排？", { now: queryNow, parseQueryPlan });
     assert.equal(result.source, "rules_fallback");
+    assert.equal(result.outcome, "query_answered");
     assert.ok(result.fallbackReason);
     assert.equal(result.queryResult.events.length, 3);
     assert.deepEqual(result.state.events, state.events);
