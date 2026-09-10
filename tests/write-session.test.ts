@@ -5,6 +5,7 @@ import { confirmRecordDraft } from "../lib/record-draft";
 import type { TimelyState } from "../lib/types";
 import { normalizeTimelyState } from "../lib/state";
 import { commitConfirmedRecord } from "../lib/tools/record-tools";
+import { createRecordRepository } from "../lib/repository/record-repository";
 
 const now = new Date("2026-09-07T10:00:00+08:00");
 const empty = (): TimelyState => ({ events: [], ledgerEntries: [], reminders: [], messages: [], pendingClarification: null });
@@ -215,6 +216,15 @@ test("oversized input cannot poison the bounded recovery context", async () => {
   const result = await runInputSession(empty(), "字".repeat(4001), { now, parse: async () => { throw Error("must not parse"); } });
   assert.equal(Boolean(result.state.writeSession?.recovery), false);
   assert.equal(Boolean(result.state.pendingConfirmation), false);
+});
+
+test("canonical category queries include legacy labels without matching unrelated notes", async () => {
+  const saved = confirmRecordDraft((await runInputSession(empty(), "午饭花35", { now, parse: async () => create })).state);
+  const record = saved.ledgerEntries[0];
+  const state = { ...saved, ledgerEntries: [{ ...record, category: "午饭" }, { ...record, id: "other", category: "交通", note: "去餐饮公司" }] };
+  const found = createRecordRepository(state).query({ version: 2, kind: "ledger", timeRange: { label: "今天", from: "2026-09-07T00:00:00+08:00", to: "2026-09-07T23:59:59+08:00" }, filters: { title: null, category: "餐饮", direction: "expense" }, aggregation: { op: "none" } });
+  assert.deepEqual(found.ledgerEntries.map(entry => entry.id), [record.id]);
+  assert.equal(state.ledgerEntries[0].category, "午饭");
 });
 
 test("recovery resolves an unsuccessful correction before confirmation", async () => {

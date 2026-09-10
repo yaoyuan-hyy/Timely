@@ -13,6 +13,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "tsBuildInfoFile": ".timely-test/tsconfig.tsbuildinfo",
     "plugins": [
       {
         "name": "next"

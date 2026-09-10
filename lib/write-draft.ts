@@ -2,6 +2,7 @@ import { inputDecisionSchema } from "./write-contract";
 import type { WriteDecision, WriteDraft, WriteFields } from "./write-contract";
 import { parseMoneyText, resolveCalendarDate } from "./write-values";
 import { getShanghaiParts, toShanghaiDayKey } from "./time";
+import { canonicalCategory, categoryMatchesDirection } from "./ledger-categories";
 
 type PatchResult = { ok: true; draft: WriteDraft } | { ok: false; code: "invalid" | "stale" | "evidence"; message: string };
 export function applyWritePatch(previous: WriteDraft | null, inputDecision: unknown, input: string, now: string, id: string, sources: Array<{ id: string; input: string; referenceNow: string }> = []): PatchResult {
@@ -40,6 +41,7 @@ export function applyWritePatch(previous: WriteDraft | null, inputDecision: unkn
   draft.fields = fields;
   if (decision.kind === "event" && decision.patch.endTime?.value === null) draft.fields.endDate = null;
   draft.uncertain = [...new Set([...draft.uncertain.filter(name => !(name in decision.patch)), ...(decision.uncertain ?? [])])];
+  if (draft.kind === "ledger" && fields.direction && fields.category && canonicalCategory(fields.category) && !categoryMatchesDirection(canonicalCategory(fields.category)!, fields.direction)) draft.uncertain = [...new Set([...draft.uncertain, "category"])];
   draft.revision += 1;
   if (previous && decision.operation === "revise") draft.sourceText = `${previous.sourceText}\n${input}`.slice(-8000);
   return { ok: true, draft };

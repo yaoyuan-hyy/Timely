@@ -11,3 +11,6 @@ pnpm-debug.log*
 tsconfig.tsbuildinfo
 .vercel
 .timely-test
+.npm-cache/
+*.log
+.DS_Store

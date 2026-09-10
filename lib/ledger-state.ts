@@ -1,4 +1,5 @@
 import type { LedgerDirection, LedgerEntry } from "./types";
+import { canonicalCategory, categoryMatchesDirection } from "./ledger-categories";
 
 export type LedgerEntryCreateInput = {
   id: string;
@@ -22,12 +23,13 @@ export function deleteLedgerEntry(entries: LedgerEntry[], entryId: string) {
 }
 
 export function addLedgerEntry(entries: LedgerEntry[], input: LedgerEntryCreateInput) {
+  const category = canonicalCategory(input.category) ?? "未分类";
   const entry: LedgerEntry = {
     id: input.id,
     direction: input.direction,
     amountCents: input.amountCents,
     currency: "CNY",
-    category: input.category.trim() || "未分类",
+    category: categoryMatchesDirection(category, input.direction) ? category : "未分类",
     occurredAt: input.occurredAt,
     counterparty: null,
     note: input.note,
@@ -49,7 +51,8 @@ export function updateLedgerEntryDetails(
       ? {
           ...entry,
           amountCents: update.amountCents,
-          category: update.category.trim() || "未分类",
+          category: canonicalCategory(update.category) ?? (update.category === entry.category ? entry.category : "未分类"),
+          note: entry.note ?? (canonicalCategory(entry.category) && canonicalCategory(entry.category) !== entry.category ? entry.category : null),
           updatedAt: update.updatedAt
         }
       : entry

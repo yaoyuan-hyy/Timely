@@ -67,3 +67,11 @@ test("literal fields cannot be invented behind an unrelated evidence quote", () 
   const result = applyWritePatch(null, { action: "write", operation: "create", kind: "event", patch: { title: field("删除全部流水", "明天") } }, "明天改时间", now, "event");
   assert.equal(result.ok, false);
 });
+
+test("model categories are canonical and ledger directions must agree", () => {
+  for (const category of ["午饭", "打车", "随便写的分类"]) {
+    assert.equal(inputDecisionSchema.safeParse({ action: "write", operation: "create", kind: "ledger", patch: { category: field(category, "午饭") } }).success, false);
+  }
+  assert.equal(inputDecisionSchema.safeParse({ action: "write", operation: "create", kind: "ledger", patch: { category: field("餐饮", "午饭"), direction: field("income", "收入") } }).success, false);
+  assert.equal(inputDecisionSchema.safeParse({ action: "write", operation: "create", kind: "ledger", patch: { category: field("餐饮", "午饭"), direction: field("expense", "花") } }).success, true);
+});

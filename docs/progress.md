@@ -1,6 +1,14 @@
 # Timely 项目进度
 
-更新时间：2026-09-07
+更新时间：2026-09-08
+
+## 2026-09-08：分类契约与根目录整理
+
+- 新增共享流水分类注册表：固定 ID、中文标准名称、方向和用途说明。模型写入、v2 查询枚举、手动分类选择及 Repository 比较共用定义；具体事项保留在备注/原文。
+- 标准分类查询兼容“午饭”“打车”等精确旧标签，不再把备注含有分类名称当作 v2 分类命中。未知历史自定义分类保留，不自动批量重写数据。查询允许明确的空结果组合，不套用写入方向限制。
+- 根目录参考图移入 `docs/design/references/`；静态兼容服务移入 `scripts/preview-server.mjs`。历史日志、npm 缓存、Finder 文件和旧 TS 缓存移至忽略目录 `.timely-test/cleanup-backup/`，可恢复。新增忽略规则，TS 增量缓存改放 `.timely-test/`；Next 入口和 `.env.local` 保持原位。
+- `npm test`、typecheck、lint、build、静态预览脚本语法、diff 检查通过；Write v2 共 36 项通过。
+- 真实七条回归严格 6/7，fallback 0。“昨天午饭 → 花35元”的标准分类、日期和金额均通过；本轮未通过的是非法日期后重述的模型上下文契约校验，保留失败，不将其记为通过。报告：`docs/evals/write-flow-v2-category-contract.json`。
 
 ## 2026-09-07：上下文恢复落地
 

@@ -4,6 +4,18 @@ Timely is a mobile-first Web/PWA client for natural-language personal records.
 
 The current interface uses a persistent desktop sidebar and mobile bottom navigation, with a shared visual system for chat, calendar, ledger, and local data settings. The primary implementation remains the Next app; `public/app.js` is a legacy static preview.
 
+Ledger writes and v2 queries share a [standard category contract](docs/architecture/ledger-category-contract.md). The model chooses canonical category names; specific activities remain in notes/source text. Exact legacy labels remain readable and queryable through category compatibility mapping.
+
+## Repository layout
+
+- `app/`, `components/`, `hooks/`: Next routes and UI (`app/api/` is the HTTP boundary).
+- `server/`: server-only AI adapters; `lib/`: shared domain logic and contracts.
+- `tests/`, `evals/`, `scripts/`: tests, frozen data, and execution scripts.
+- `docs/`: architecture, progress, plans, evaluation reports; reference images are in `docs/design/references/`.
+- `public/`: static assets and the legacy preview. From the repository root, `node scripts/preview-server.mjs` runs that preview only; use `npm run dev` for the actual app and API.
+
+Next configuration, package files and `.env.local` remain at the root. Generated caches/logs are ignored; TypeScript's incremental cache lives in `.timely-test/`. Root cleanup backups are temporarily retained in `.timely-test/cleanup-backup/` for recovery.
+
 The product is not a reminder app, planning app, task manager, focus timer, or productivity analytics tool. The current app is event-first, with an independent local ledger-record surface and local query feedback already present:
 
 ```text
