@@ -3,9 +3,12 @@ import { queryDecisionV2Schema, queryPlanSchema } from "./query-contract";
 import type { QueryDecisionV2, QueryPlan, QueryPlanner, QuerySource } from "./query-contract";
 import type { QueryPlanV2 } from "./query-contract";
 import { buildShanghaiIso, getShanghaiParts, isValidShanghaiDateParts } from "./time";
+import { canonicalCategory } from "./ledger-categories";
 export function adaptQueryPlanV1(plan: QueryPlan): { version: 2; decision: "execute"; query: QueryPlanV2 } {
   const valid = queryPlanSchema.parse(plan);
-  return { version: 2, decision: "execute", query: { version: 2, kind: valid.kind, timeRange: valid.timeRange, filters: { title: valid.title, category: valid.category, direction: valid.direction }, aggregation: { op: "none" } } };
+  const category = valid.category ? canonicalCategory(valid.category) : null;
+  if (valid.category && !category) throw Error("unsupported_legacy_category");
+  return { version: 2, decision: "execute", query: { version: 2, kind: valid.kind, timeRange: valid.timeRange, filters: { title: valid.title, category, direction: valid.direction }, aggregation: { op: "none" } } };
 }
 export async function planQuery(input: string, now: Date, planner?: QueryPlanner): Promise<{ plan: QueryPlan; source: QuerySource; fallbackReason: string | null }> {
   const baseline = () => queryPlanSchema.parse(buildQueryPlan(input, now));

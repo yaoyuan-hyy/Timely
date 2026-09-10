@@ -14,6 +14,7 @@ import {
 } from "@/lib/ledger-stats";
 import { formatShortDate, getShanghaiParts } from "@/lib/time";
 import type { LedgerDirection, LedgerEntry } from "@/lib/types";
+import { canonicalCategory, categoriesForDirection } from "@/lib/ledger-categories";
 
 type LedgerMode = "month" | "year";
 
@@ -45,8 +46,8 @@ const categoryIcons: Record<string, LucideIcon> = {
   未分类: Shapes
 };
 
-const expenseCategories = ["餐饮", "购物", "交通", "家居", "日用", "医疗", "娱乐", "未分类"];
-const incomeCategories = ["工资", "报销", "奖金", "退款", "兼职", "未分类"];
+const expenseCategories = categoriesForDirection("expense");
+const incomeCategories = categoriesForDirection("income");
 
 export function LedgerView({
   entries,
@@ -112,7 +113,7 @@ export function LedgerView({
     closeManualEntryDrawer();
     setSelectedLedgerEntry(entry);
     setAmountDraft(formatLedgerAmount(entry.amountCents));
-    setCategoryDraft(entry.category);
+    setCategoryDraft(canonicalCategory(entry.category) ?? entry.category);
   }
 
   function closeLedgerEditor() {
@@ -317,11 +318,14 @@ export function LedgerView({
               </label>
               <label className="ledger-editor-field">
                 <span>分类</span>
-                <input
+                <select
                   value={categoryDraft}
                   aria-label="流水分类"
                   onChange={(event) => setCategoryDraft(event.target.value)}
-                />
+                >
+                  {!categoriesForDirection(selectedLedgerEntry.direction).some(name => name === categoryDraft) && <option value={categoryDraft}>{categoryDraft}（历史分类）</option>}
+                  {categoriesForDirection(selectedLedgerEntry.direction).map(name => <option key={name} value={name}>{name}</option>)}
+                </select>
               </label>
               <div className="ledger-editor-actions">
                 <button className="ledger-editor-cancel" type="button" onClick={closeLedgerEditor}>
@@ -478,8 +482,8 @@ function LedgerEntryRow({
         {getLedgerCategoryIcon(entry.category)}
       </span>
       <div className="ledger-entry-main">
-        <h4>{entry.category}</h4>
-        {entry.note && <p>{entry.note}</p>}
+        <h4>{canonicalCategory(entry.category) ?? entry.category}</h4>
+        {(entry.note || (canonicalCategory(entry.category) && canonicalCategory(entry.category) !== entry.category)) && <p>{entry.note ?? entry.category}</p>}
       </div>
       <strong className="ledger-entry-amount">{`${isIncome ? "+" : "-"}${formatLedgerAmount(entry.amountCents)}`}</strong>
       <button
@@ -507,7 +511,7 @@ function formatExpenseAmount(amountCents: number) {
 }
 
 function getLedgerCategoryIcon(category: string) {
-  const Icon = categoryIcons[category] ?? Shapes;
+  const Icon = categoryIcons[canonicalCategory(category) ?? category] ?? Shapes;
   return <Icon size={20} strokeWidth={1.7} aria-hidden="true" />;
 }
 

@@ -120,6 +120,9 @@ Main files:
 
 Architecture rules:
 
+- Ledger categories are defined only in `lib/ledger-categories.ts`. Active model writes and QueryPlanV2 use its canonical-name enum; specific activities belong in note/sourceText. Keep ID-based semantic matching in Repository and exact legacy aliases for read compatibility. Never turn a note substring into a v2 category match. See `docs/architecture/ledger-category-contract.md`.
+- Keep reference images under `docs/design/references/`, scripts under `scripts/`, and generated logs/cache out of version control. `scripts/preview-server.mjs` is the legacy static preview only; `npm run dev` remains the combined Next frontend/API entry.
+
 - Active UI uses `runInputSession` and `/api/input-decision`; v1 supervisor/write routes remain compatibility surfaces. `lib/input-recovery.ts` handles bounded unresolved raw input, distinct from validated drafts. See `docs/architecture/input-context-recovery.md`.
 - Recovery requires matching id/revision and explicit continue/replace. Old field evidence uses turnId (or a unique exact-source match); resolve relative dates against that source turn's time. Never promote rejected model fields into trusted drafts.
 - Unresolved recovery blocks UI and Tool confirmation. Successful resolution consumes it; cancel/reload clear it; expiration is checked on input after 15 minutes. Keep at most 4 turns / 12000 characters, max 4000 per input. Do not replace current records with captured retry state.

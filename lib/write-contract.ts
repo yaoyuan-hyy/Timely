@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { queryDecisionV2Schema } from "./query-contract";
+import { LEDGER_CATEGORY_NAMES, categoryMatchesDirection } from "./ledger-categories";
+const ledgerCategorySchema = z.enum(LEDGER_CATEGORY_NAMES);
 
 const evidence = z.string().trim().min(1).max(2000);
 const text = z.string().trim().min(1).max(1000);
@@ -21,10 +23,10 @@ export const dateExpressionSchema = z.discriminatedUnion("type", [
 const timeSchema = z.object({ hour: z.number().int().min(0).max(23), minute: z.number().int().min(0).max(59) }).strict();
 const commonPatch = { date: slot(dateExpressionSchema).optional(), time: slot(timeSchema).optional() };
 const eventPatch = z.object({ ...commonPatch, title: slot(text).optional(), location: slot(text.nullable()).optional(), notes: slot(text.nullable()).optional(), endDate: slot(dateExpressionSchema.nullable()).optional(), endTime: slot(timeSchema.nullable()).optional() }).strict();
-const ledgerPatch = z.object({ ...commonPatch, amount: slot(text).optional(), direction: slot(z.enum(["income", "expense"])).optional(), category: slot(text).optional(), counterparty: slot(text.nullable()).optional(), note: slot(text.nullable()).optional() }).strict();
+const ledgerPatch = z.object({ ...commonPatch, amount: slot(text).optional(), direction: slot(z.enum(["income", "expense"])).optional(), category: slot(ledgerCategorySchema).optional(), counterparty: slot(text.nullable()).optional(), note: slot(text.nullable()).optional() }).strict();
 const selectorSchema = z.object({
   reference: z.enum(["recent", "matching", "selection"]),
-  title: text.optional(), category: text.optional(), date: dateExpressionSchema.optional(),
+  title: text.optional(), category: ledgerCategorySchema.optional(), date: dateExpressionSchema.optional(),
   ordinal: z.number().int().min(1).max(100).optional()
 }).strict();
 const baseSchema = z.object({ id: z.string().min(1).max(100), revision: z.number().int().positive() }).strict();
@@ -38,6 +40,7 @@ export const writeDecisionSchema = z.discriminatedUnion("kind", [
   z.object({ ...shared, kind: z.literal("event"), patch: eventPatch }).strict(),
   z.object({ ...shared, kind: z.literal("ledger"), patch: ledgerPatch }).strict()
 ]).superRefine((value, ctx) => {
+  if (value.kind === "ledger" && value.patch.category && value.patch.direction && !categoryMatchesDirection(value.patch.category.value, value.patch.direction.value)) ctx.addIssue({ code: "custom", message: "分类与收支方向不匹配" });
   const allowed = value.kind === "event" ? ["title", "date", "time", "endDate", "endTime"] : ["date", "time", "amount", "direction", "category"];
   if (value.uncertain?.some(field => !allowed.includes(field))) ctx.addIssue({ code: "custom", message: "Uncertainty does not apply to this record kind" });
   if (value.kind === "event" ? Boolean(value.target?.category) : Boolean(value.target?.title)) ctx.addIssue({ code: "custom", message: "Target filter does not apply to this record kind" });

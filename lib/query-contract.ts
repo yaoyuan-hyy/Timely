@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { recordDateTime } from "./record-validation";
+import { LEDGER_CATEGORY_NAMES } from "./ledger-categories";
+const ledgerCategorySchema = z.enum(LEDGER_CATEGORY_NAMES);
 
 export const queryPlanSchema = z.object({
   version: z.literal(1),
@@ -28,7 +30,7 @@ export const queryPlanV2Schema = z.object({
   version: z.literal(2),
   kind: z.enum(["schedule", "ledger", "task"]),
   timeRange: z.object({ label: z.string().trim().min(1).max(80), from: recordDateTime, to: recordDateTime }).strict(),
-  filters: z.object({ title: z.string().trim().min(1).max(200).nullable(), category: z.string().trim().min(1).max(80).nullable(), direction: z.enum(["income", "expense"]).nullable() }).strict(),
+  filters: z.object({ title: z.string().trim().min(1).max(200).nullable(), category: ledgerCategorySchema.nullable(), direction: z.enum(["income", "expense"]).nullable() }).strict(),
   aggregation: queryAggregationSchema
 }).strict()
   .refine(p => Date.parse(p.timeRange.from) <= Date.parse(p.timeRange.to), "时间范围顺序无效")

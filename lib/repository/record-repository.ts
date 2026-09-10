@@ -2,6 +2,7 @@ import type { CalendarEvent, LedgerEntry, PendingConfirmation, TimelyState } fro
 import type { OperationResult, QueryPlan, QueryPlanV2 } from "../query-contract";
 import { queryPlanSchema, queryPlanV2Schema } from "../query-contract";
 import { eventSchema, ledgerSchema } from "../record-validation";
+import { sameLedgerCategory } from "../ledger-categories";
 export type RecordSnapshot = Pick<TimelyState, "events" | "ledgerEntries">;
 export type RecordCandidate = Pick<PendingConfirmation, "kind" | "record">;
 export interface RecordRepository {
@@ -21,7 +22,7 @@ export function createRecordRepository(state: RecordSnapshot): RecordRepository 
       const inRange = (time: string) => Date.parse(time) >= from && Date.parse(time) <= to;
       if (plan.kind === "task") return { events: [], ledgerEntries: [] };
       const events = plan.kind !== "schedule" ? [] : data.events.filter(e => e.status === "active" && inRange(e.startsAt) && (!plan.title || e.title.includes(plan.title))).sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt) || a.id.localeCompare(b.id));
-      const ledgerEntries = plan.kind !== "ledger" ? [] : data.ledgerEntries.filter(e => inRange(e.occurredAt) && (!plan.direction || e.direction === plan.direction) && (!plan.category || e.category === plan.category || e.note?.includes(plan.category))).sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt) || a.id.localeCompare(b.id));
+      const ledgerEntries = plan.kind !== "ledger" ? [] : data.ledgerEntries.filter(e => inRange(e.occurredAt) && (!plan.direction || e.direction === plan.direction) && (!plan.category || (plan.version === 2 ? sameLedgerCategory(e.category, plan.category) : e.category === plan.category || e.note?.includes(plan.category)))).sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt) || a.id.localeCompare(b.id));
       return structuredClone({ events, ledgerEntries });
     },
     commit(candidate, expectedBefore) {
