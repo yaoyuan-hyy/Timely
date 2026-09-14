@@ -1,5 +1,6 @@
 "use client";
 
+import { apiUrl } from "@/lib/api-endpoint";
 import { useCallback, useRef, useState } from "react";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import type { AiRecordParseResult } from "@/lib/record-input";
@@ -129,7 +130,7 @@ export function useRecordSubmit({
 }
 
 export async function requestAiRecordParse(input: string, context: { now: Date; pendingClarification?: TimelyState["pendingClarification"] }, signal: AbortSignal): Promise<AiRecordParseResult> {
-  const response = await fetch("/api/record-input", {
+  const response = await fetch(apiUrl("/api/record-input"), {
     method: "POST",
     signal: AbortSignal.any([signal, AbortSignal.timeout(20000)]),
     headers: {
@@ -151,7 +152,7 @@ function sessionVersion(state: TimelyState) {
 }
 
 async function requestInputDecision(input: string, context: { now: Date; pending: WriteContext }, signal: AbortSignal) {
-  const response = await fetch("/api/input-decision", {
+  const response = await fetch(apiUrl("/api/input-decision"), {
     method: "POST", signal: AbortSignal.any([signal, AbortSignal.timeout(20000)]),
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ input, now: context.now.toISOString(), pending: context.pending })

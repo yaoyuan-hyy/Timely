@@ -1,0 +1,6 @@
+/* Shared UI, with mobile shell insets accounted for in the grid dimensions. */
+@media (max-width: 760px) {
+  .phone-shell { grid-template-rows: calc(70px + env(safe-area-inset-top)) minmax(0, 1fr) calc(68px + env(safe-area-inset-bottom)); }
+  .app-header { height: calc(70px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); }
+  input, textarea, select { font-size: 16px; }
+}

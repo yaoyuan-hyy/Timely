@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { loadStoredState, saveStoredState } from "@/lib/repository/state-storage";
 
+import type { AsyncStorage } from "@/lib/repository/queued-storage";
+let nativeStorage: AsyncStorage | undefined;
+export function configureStateStorage(storage: AsyncStorage) { nativeStorage = storage; }
+
 function identityNormalizer<T>(value: unknown) {
   return value as T;
 }
@@ -18,31 +22,49 @@ export function useLocalStorageState<T>(
   const canPersist = useRef(false);
 
   useEffect(() => {
+    let active = true;
     canPersist.current = false;
-    try {
-      const loaded = loadStoredState(window.localStorage, key, fallback, normalize);
-      canPersist.current = loaded.ok;
-      if (loaded.ok) setValue(loaded.value);
-      else setStorageError(loaded.message);
-    } catch {
-      setValue(fallback);
-      setStorageError("无法读取浏览器记录，请检查存储权限后刷新页面。");
-    } finally {
-      setIsReady(true);
-    }
+    setIsReady(false);
+    const load = async () => {
+      try {
+        if (nativeStorage) {
+          const stored = await nativeStorage.getItem(key);
+          if (!active) return;
+          setValue(stored === null ? fallback : normalize(stored, fallback));
+          canPersist.current = true;
+        } else {
+          const loaded = loadStoredState(window.localStorage, key, fallback, normalize);
+          if (!active) return;
+          canPersist.current = loaded.ok;
+          if (loaded.ok) setValue(loaded.value);
+          else setStorageError(loaded.message);
+        }
+      } catch {
+        if (active) setStorageError("无法读取本机记录，请检查存储权限后重试。");
+      } finally { if (active) setIsReady(true); }
+    };
+    void load();
+    return () => { active = false; };
   }, [fallback, key, normalize]);
 
   useEffect(() => {
-    if (!isReady || !canPersist.current) {
-      return;
-    }
-
-    try {
-      const saved = saveStoredState(window.localStorage, key, value);
-      setStorageError(saved.ok ? null : saved.message);
-    } catch {
-      setStorageError("浏览器未能保存最新记录，请先到设置导出备份，暂时不要关闭页面。");
-    }
+    if (!isReady || !canPersist.current) return;
+    let active = true;
+    const save = async () => {
+      try {
+        if (nativeStorage) {
+          await nativeStorage.setItem(key, JSON.stringify(value));
+          if (active) setStorageError(null);
+        } else {
+          const saved = saveStoredState(window.localStorage, key, value);
+          if (active) setStorageError(saved.ok ? null : saved.message);
+        }
+      } catch {
+        if (active) setStorageError("本机未能保存最新记录，请先到设置导出备份，暂时不要关闭应用。");
+      }
+    };
+    void save();
+    return () => { active = false; };
   }, [isReady, key, value]);
 
   return [value, setValue, isReady, storageError] as const;

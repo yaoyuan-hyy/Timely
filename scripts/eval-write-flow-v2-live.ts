@@ -17,7 +17,7 @@ const turnSchema = z.object({
 const caseSchema = z.object({ id: z.string().min(1), now: z.string(), turns: z.array(turnSchema).min(1), final: z.object({ kind: z.enum(["event", "ledger"]), title: z.string().optional(), amountCents: z.number().int().positive().optional(), direction: z.enum(["income", "expense"]).optional(), date: z.string().optional(), time: z.string().optional(), location: z.string().nullable().optional(), notes: z.string().nullable().optional(), category: z.string().optional() }).strict() }).strict();
 type EvalCase = z.infer<typeof caseSchema>;
 type Check = { name: string; expected: unknown; actual: unknown; passed: boolean };
-type Row = { id: string; passed: boolean; systemPassed: boolean; checks: Check[]; sources: string[]; failures: string[]; providerErrors: string[]; decisions: unknown[]; latencyMs: number };
+type Row = { id: string; passed: boolean; systemPassed: boolean; checks: Check[]; sources: string[]; failures: string[]; providerErrors: string[]; decisions: unknown[]; latencyMs: number; providerAttempts: number };
 
 function emptyState(): TimelyState { return { events: [], reminders: [], ledgerEntries: [], messages: [], pendingClarification: null }; }
 function recordCount(state: TimelyState) { return state.events.length + state.ledgerEntries.length; }
@@ -55,7 +55,7 @@ async function main() {
   const dataset = z.array(caseSchema).parse(JSON.parse(readFileSync(resolve(datasetPath), "utf8")));
   const rows: Row[] = [];
   for (const example of dataset) {
-    let state = emptyState(); const checks: Check[] = []; const sources: string[] = []; const failures: string[] = []; const providerErrors: string[] = []; const decisions: unknown[] = []; const started = performance.now();
+    let providerAttempts = 0; let state = emptyState(); const checks: Check[] = []; const sources: string[] = []; const failures: string[] = []; const providerErrors: string[] = []; const decisions: unknown[] = []; const started = performance.now();
     for (const turn of example.turns) {
       if (turn.confirm) {
         state = confirmRecordDraft(state);
@@ -64,7 +64,7 @@ async function main() {
         addCheck(checks, `${example.id}.confirm.draft`, turn.expect.draft, Boolean(state.writeSession?.draft));
       } else {
         const before = JSON.stringify([state.events, state.ledgerEntries, state.reminders]);
-        const result = await runInputSession(state, turn.input!, { now: new Date(example.now), parse: async (input, context) => { try { const decision = await parseDeepSeekInputDecision(input, context); decisions.push({ input, decision }); return decision; } catch (error) { providerErrors.push(error instanceof Error ? error.message.slice(0, 160) : "provider_error"); throw error; } } });
+        const result = await runInputSession(state, turn.input!, { now: new Date(example.now), parse: async (input, context) => { try { const decision = await parseDeepSeekInputDecision(input, { ...context, onAttempt: () => { providerAttempts++; } }); decisions.push({ input, decision }); return decision; } catch (error) { providerErrors.push(error instanceof Error ? error.message.slice(0, 160) : "provider_error"); throw error; } } });
         state = result.state; sources.push(result.source); if (result.failure) failures.push(result.failure);
         addCheck(checks, `${example.id}.${turn.input}.records`, turn.expect.records, recordCount(state));
         addCheck(checks, `${example.id}.${turn.input}.pending`, turn.expect.pending, Boolean(state.pendingConfirmation));
@@ -77,16 +77,16 @@ async function main() {
     checks.push(...finalChecks(state, example.final));
     const systemPassed = checks.every(item => item.passed);
     const passed = systemPassed && sources.every(source => source !== "local") && providerErrors.length === 0;
-    rows.push({ id: example.id, passed, systemPassed, checks, sources, failures, providerErrors, decisions, latencyMs: Math.round(performance.now() - started) });
+    rows.push({ id: example.id, passed, systemPassed, checks, sources, failures, providerErrors, decisions, providerAttempts, latencyMs: Math.round(performance.now() - started) });
     console.log(`${passed ? "PASS" : "FAIL"} ${example.id} source=${sources.join(",") || "confirm"}`);
   }
   const fallbackTurns = rows.reduce((sum, row) => sum + row.sources.filter(source => source === "local").length, 0);
   const failedTurns = rows.reduce((sum, row) => sum + row.sources.filter(source => source === "failed").length, 0);
   const modelTurns = rows.reduce((sum, row) => sum + row.sources.filter(source => source === "model").length, 0);
-  const summary = { cases: rows.length, passed: rows.filter(row => row.passed).length, strictCasePassRate: rows.filter(row => row.passed).length / rows.length, systemPassed: rows.filter(row => row.systemPassed).length, modelTurns, fallbackTurns, failedTurns, providerErrorTurns: rows.reduce((sum, row) => sum + row.providerErrors.length, 0), latencyMs: rows.map(row => row.latencyMs) };
+  const summary = { providerAttempts: rows.reduce((sum, row) => sum + row.providerAttempts, 0), cases: rows.length, passed: rows.filter(row => row.passed).length, strictCasePassRate: rows.filter(row => row.passed).length / rows.length, systemPassed: rows.filter(row => row.systemPassed).length, modelTurns, fallbackTurns, failedTurns, providerErrorTurns: rows.reduce((sum, row) => sum + row.providerErrors.length, 0), latencyMs: rows.map(row => row.latencyMs) };
   const outIndex = args.indexOf("--out"); const output = resolve(outIndex >= 0 ? args[outIndex + 1] : `.timely-test/write-evals/live-${Date.now()}.json`); mkdirSync(dirname(output), { recursive: true });
   const hash = (path: string) => createHash("sha256").update(readFileSync(path)).digest("hex");
-  const sourceFiles = ["lib/write-contract.ts", "lib/write-draft.ts", "lib/write-session.ts", "lib/write-values.ts", "server/ai/deepseek-input-decision.ts", "scripts/eval-write-flow-v2-live.ts"];
+  const sourceFiles = ["lib/input-recovery.ts", "lib/ledger-categories.ts", "lib/write-contract.ts", "lib/write-draft.ts", "lib/write-session.ts", "lib/write-values.ts", "server/ai/deepseek-input-decision.ts", "scripts/eval-write-flow-v2-live.ts"];
   const report = { metadata: { version: 2, generatedAt: new Date().toISOString(), model: process.env.DEEPSEEK_MODEL || "deepseek-v4-flash", datasetPath, datasetSha256: hash(datasetPath), sourceHashes: Object.fromEntries(sourceFiles.map(path => [path, hash(path)])), gitDirty: Boolean(execFileSync("git", ["status", "--porcelain"], { encoding: "utf8" }).trim()), gitCommit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim() }, summary, rows };
   writeFileSync(output, JSON.stringify(report, null, 2)); console.log(JSON.stringify({ summary, report: output }, null, 2));
   if (rows.some(row => !row.passed)) process.exitCode = 1;

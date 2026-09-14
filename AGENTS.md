@@ -84,6 +84,12 @@ CSS:
 - If Tailwind is introduced later, preserve the same tokens, spacing, and motion principles instead of creating a parallel visual language.
 - Use stable dimensions for fixed-format UI like calendar cells, icon buttons, toolbars, and timeline rows so hover states and text do not shift layout.
 
+## Mobile prototype (2026-09-14)
+
+- `mobile/main.tsx` reuses TimelyApp through Vite; Capacitor packages `mobile/dist`. Next remains the API server and web entry. Do not duplicate business UI or bundle server secrets.
+- Native storage uses Preferences via configureStateStorage and serialized writes; web uses localStorage. Failed reads must not enable saving fallback. Do not claim native persistence/keyboard/backup works on devices without device tests.
+- Mobile builds require NEXT_PUBLIC_API_BASE_URL as HTTPS origin; server configures MOBILE_ALLOWED_ORIGINS. CORS is not authentication. See docs/mobile/README.md for prerequisites and incomplete device acceptance.
+
 ## Frontend Architecture
 
 Framework stack:
@@ -124,6 +130,7 @@ Architecture rules:
 - Keep reference images under `docs/design/references/`, scripts under `scripts/`, and generated logs/cache out of version control. `scripts/preview-server.mjs` is the legacy static preview only; `npm run dev` remains the combined Next frontend/API entry.
 
 - Active UI uses `runInputSession` and `/api/input-decision`; v1 supervisor/write routes remain compatibility surfaces. `lib/input-recovery.ts` handles bounded unresolved raw input, distinct from validated drafts. See `docs/architecture/input-context-recovery.md`.
+- Recovery supersession uses evidence-backed `superseded` declarations for corrected turns; validate current patch fields and share `resolvePatchSource` between coverage and application. Repeated current-turn words do not acknowledge old turns.
 - Recovery requires matching id/revision and explicit continue/replace. Old field evidence uses turnId (or a unique exact-source match); resolve relative dates against that source turn's time. Never promote rejected model fields into trusted drafts.
 - Unresolved recovery blocks UI and Tool confirmation. Successful resolution consumes it; cancel/reload clear it; expiration is checked on input after 15 minutes. Keep at most 4 turns / 12000 characters, max 4000 per input. Do not replace current records with captured retry state.
 - Recovery parsing can make one bounded validation repair; both attempts share 15 seconds. Record provider attempts separately from logical input turns and local fallback in evaluations.

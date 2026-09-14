@@ -1,0 +1,147 @@
+[
+  {
+    "id": "date-correction-preserves-event",
+    "now": "2026-09-12T10:00:00+08:00",
+    "turns": [
+      {
+        "input": "明天下午三点开会",
+        "expect": {
+          "records": 0,
+          "pending": true,
+          "draft": true,
+          "draftFields": {}
+        }
+      },
+      {
+        "input": "日期改成后天",
+        "expect": {
+          "records": 0,
+          "pending": true,
+          "draft": true,
+          "draftFields": {
+            "date": "2026-09-14",
+            "time": "15:00"
+          }
+        }
+      },
+      {
+        "confirm": true,
+        "expect": {
+          "records": 1,
+          "pending": false,
+          "draft": false
+        }
+      }
+    ],
+    "final": {
+      "kind": "event",
+      "title": "开会",
+      "date": "2026-09-14",
+      "time": "15:00"
+    }
+  },
+  {
+    "id": "consecutive-amount-corrections",
+    "now": "2026-09-12T10:00:00+08:00",
+    "turns": [
+      {
+        "input": "昨天午饭花35元",
+        "expect": {
+          "records": 0,
+          "pending": true,
+          "draft": true,
+          "draftFields": {}
+        }
+      },
+      {
+        "input": "金额改45元",
+        "expect": {
+          "records": 0,
+          "pending": true,
+          "draft": true,
+          "draftFields": {
+            "amountCents": 4500,
+            "date": "2026-09-11"
+          }
+        }
+      },
+      {
+        "input": "不是45，是50元",
+        "expect": {
+          "records": 0,
+          "pending": true,
+          "draft": true,
+          "draftFields": {
+            "amountCents": 5000,
+            "date": "2026-09-11"
+          }
+        }
+      },
+      {
+        "confirm": true,
+        "expect": {
+          "records": 1,
+          "pending": false,
+          "draft": false
+        }
+      },
+      {
+        "confirm": true,
+        "expect": {
+          "records": 1,
+          "pending": false,
+          "draft": false
+        }
+      }
+    ],
+    "final": {
+      "kind": "ledger",
+      "amountCents": 5000,
+      "date": "2026-09-11",
+      "category": "餐饮"
+    }
+  },
+  {
+    "id": "remove-location-preserves-time",
+    "now": "2026-09-12T10:00:00+08:00",
+    "turns": [
+      {
+        "input": "明天下午两点开会，地点在办公室",
+        "expect": {
+          "records": 0,
+          "pending": true,
+          "draft": true,
+          "draftFields": {}
+        }
+      },
+      {
+        "input": "地点不要了",
+        "expect": {
+          "records": 0,
+          "pending": true,
+          "draft": true,
+          "draftFields": {
+            "location": null,
+            "time": "14:00",
+            "date": "2026-09-13"
+          }
+        }
+      },
+      {
+        "confirm": true,
+        "expect": {
+          "records": 1,
+          "pending": false,
+          "draft": false
+        }
+      }
+    ],
+    "final": {
+      "kind": "event",
+      "title": "开会",
+      "date": "2026-09-13",
+      "time": "14:00",
+      "location": null
+    }
+  }
+]

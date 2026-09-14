@@ -1,6 +1,6 @@
 # Timely 技术架构记录
 
-> 更新日期：2026-09-07
+> 更新日期：2026-09-12
 > 产品形态：手机优先、本地优先的自然语言个人记录 Web/PWA
 > 当前重点：统一 InputDecision + 字段草稿/上下文恢复 + Query Agent v2 + local JSON datastore
 
@@ -22,12 +22,14 @@
 - `lib/repository/state-storage.ts`：注入 storage，沿用 normalizeTimelyState 和原 key；读取失败不自动把 fallback 写回覆盖存储。
 - `lib/tools/record-tools.ts`：Query Agent 只有只读能力；UI 的确认提交入口独立。Repository 的成功提交返回内存记录快照，持久化由 storage adapter 完成，不把这两者称为数据库事务。
 - `lib/query-planning.ts`：模型解析失败/超时/非法计划回退规则，返回 source 和 fallbackReason。
-- `server/ai/deepseek-query-planner.ts`：只接收查询原文和 now，不接收本地个人记录。当前用于显式 live eval 与可注入接口，应用默认仍为规则查询。
+- `server/ai/deepseek-query-planner.ts`：只接收查询原文和 now，不接收本地个人记录。该独立适配器用于显式 live eval 与可注入接口；当前 UI 的统一 InputDecision 可直接携带模型查询决策，规则仍是独立查询工作流默认基线。
 - `lib/query-evaluation.ts`：固定 fixture 分别评测计划与执行结果。模型降级即不给模型计分，另保留实际结果是否正确。
 
 这是渐进抽取：现有写 workflow、手动编辑和备份合并仍保留纯领域函数；确认提交与查询已经过 Repository，全部浏览器持久化经过 StateStorage。没有引入数据库、跨标签页锁、账户或新的任务系统。
 
 命令：`npm run test:query-system`、`npm run eval:queries`、`npm run eval:queries -- --live`。
+
+> 下方为历史架构记录，不代表当前入口；当前 UI 链路以上方说明为准。
 
 ## 2026-09-05 输入链路调整
 

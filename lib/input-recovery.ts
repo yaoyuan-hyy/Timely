@@ -29,6 +29,25 @@ export function recoveryDecisionIssue(decision: InputDecision, context: WriteCon
   if (!decision.recovery || decision.recovery.id !== recovery.id || decision.recovery.revision !== recovery.revision) return "必须使用 pending.recovery 的 id/revision，并明确 continue 或 replace。";
   if (decision.action !== "write" || decision.recovery.mode !== "continue") return null;
   const changes = Object.values(decision.patch);
-  const missing = recovery.turns.filter(turn => !changes.some(change => change && (change.turnId === turn.id || (!change.turnId && recovery.turns.filter(source => source.input.includes(change.evidence)).length === 1 && turn.input.includes(change.evidence)))));
-  return missing.length ? `尚未处理的原输入被遗漏：${missing.map(turn => turn.id).join("、")}。continue 需要重新提取未决输入与本轮的完整字段，旧字段引用 turnId；不能只提取本轮。若用户明确覆盖旧意图用 replace；仍不能处理则 clarify。` : null;
+  const superseded = decision.recovery.superseded ?? [];
+  const seen = new Set<string>();
+  for (const replacement of superseded) {
+    if (seen.has(replacement.turnId) || !recovery.turns.some(turn => turn.id === replacement.turnId)) return "覆盖声明引用了重复或不存在的轮次。";
+    seen.add(replacement.turnId);
+    if (!input.includes(replacement.evidence)) return "覆盖声明必须逐字引用本轮的纠正或完整重述。";
+    for (const name of replacement.fields) {
+      const change = (decision.patch as Record<string, { evidence: string; turnId?: string }>)[name];
+      if (!change || change.turnId || !input.includes(change.evidence) || !replacement.evidence.includes(change.evidence)) return "覆盖字段必须存在于本轮 patch，且有本轮原文依据。";
+    }
+  }
+  const missing = recovery.turns.filter(turn => !seen.has(turn.id) && !changes.some(change => change && resolvePatchSource(change, input, "", recovery.turns)?.id === turn.id));
+  return missing.length ? `尚未处理的原输入被遗漏：${missing.map(turn => turn.id).join("、")}。continue 需要提取仍有效的旧字段并引用 turnId；被本轮纠正或完整重述覆盖的轮次，用 recovery.superseded 声明 turnId、本轮 evidence 和覆盖字段 fields。不能遗漏仍有效的信息；无法确定则 clarify。` : null;
+}
+
+// One source rule shared by coverage validation and field application.
+export function resolvePatchSource(change: { evidence: string; turnId?: string }, input: string, referenceNow: string, sources: Array<{ id: string; input: string; referenceNow: string }>): { id?: string; input: string; referenceNow: string } | undefined {
+  if (change.turnId) return sources.find(turn => turn.id === change.turnId && turn.input.includes(change.evidence));
+  if (input.includes(change.evidence)) return { input, referenceNow };
+  const matches = sources.filter(turn => turn.input.includes(change.evidence));
+  return matches.length === 1 ? matches[0] : undefined;
 }
