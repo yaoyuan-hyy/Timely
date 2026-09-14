@@ -176,7 +176,7 @@ test("complete restatement can correct an invalid date using current-turn eviden
   const first = await runInputSession(empty(), "6月31日10点开会", { now, parse: async () => ({ action: "write", operation: "create", kind: "event", patch: { date: field({ type: "absolute", month: 6, day: 31 }, "6月31日"), title: field("开会", "开会"), time: field({ hour: 10, minute: 0 }, "10点") } }) });
   const next = await runInputSession(first.state, "改为6月30日10点开会", { now, parse: async (_input, context) => {
     const recovery = context.pending.recovery!;
-    return { action: "write", operation: "create", kind: "event", recovery: { id: recovery.id, revision: recovery.revision, mode: "continue" }, patch: { date: field({ type: "absolute", month: 6, day: 30 }, "6月30日"), title: field("开会", "开会"), time: field({ hour: 10, minute: 0 }, "10点") } };
+    return { action: "write", operation: "create", kind: "event", recovery: { id: recovery.id, revision: recovery.revision, mode: "continue", superseded: [{ turnId: recovery.turns[0].id, evidence: "改为6月30日10点开会", fields: ["date", "time", "title"] }] }, patch: { date: field({ type: "absolute", month: 6, day: 30 }, "6月30日"), title: field("开会", "开会"), time: field({ hour: 10, minute: 0 }, "10点") } };
   } });
   assert.equal(next.state.pendingConfirmation?.kind, "event");
   assert.equal(next.state.writeSession?.draft?.fields.date, "2026-06-30");
@@ -238,4 +238,58 @@ test("recovery resolves an unsuccessful correction before confirmation", async (
   assert.equal(saved.ledgerEntries[0].amountCents, 4500);
   assert.match(saved.ledgerEntries[0].occurredAt, /^2026-09-06/);
   assert.equal(saved.writeSession, null);
+});
+
+
+test("explicit supersession recovers a fully corrected date without requiring obsolete fields", async () => {
+  const first = await runInputSession(empty(), "6月31日10点开会", { now, parse: async () => ({ action: "write", operation: "create", kind: "event", patch: { date: field({ type: "absolute", month: 6, day: 31 }, "6月31日") } }) });
+  const next = await runInputSession(first.state, "改为6月30日10点开会", { now, parse: async (_input, context) => {
+    const r = context.pending.recovery!;
+    return { action: "write", operation: "create", kind: "event", recovery: { id: r.id, revision: r.revision, mode: "continue", superseded: [{ turnId: r.turns[0].id, evidence: "改为6月30日10点开会", fields: ["date", "time", "title"] }] }, patch: { date: field({ type: "absolute", month: 6, day: 30 }, "6月30日"), time: field({ hour: 10, minute: 0 }, "10点"), title: field("开会", "开会") } };
+  } });
+  assert.equal(next.failure, null);
+  assert.equal(next.state.events.length, 0);
+  assert.equal(next.state.writeSession?.draft?.fields.date, "2026-06-30");
+  const saved = confirmRecordDraft(next.state);
+  assert.equal(saved.events.length, 1);
+  assert.equal(confirmRecordDraft(saved).events.length, 1);
+});
+
+test("repeating an old word in current input does not acknowledge omitted old context", async () => {
+  const first = await runInputSession(empty(), "昨天午饭", { now, parse: async () => { throw Error("offline"); } });
+  const next = await runInputSession(first.state, "午饭花35", { now, parse: async (_input, context) => {
+    const r = context.pending.recovery!;
+    return { ...create, recovery: { id: r.id, revision: r.revision, mode: "continue" } };
+  } });
+  assert.equal(next.failure, "invalid_decision");
+  assert.equal(Boolean(next.state.pendingConfirmation), false);
+});
+
+
+test("supersession cannot use invented evidence, stale turns, or absent patch fields", async () => {
+  const first = await runInputSession(empty(), "昨天午饭", { now, parse: async () => { throw Error("offline"); } });
+  for (const invalid of ["turn", "evidence", "field", "old-source"]) {
+    const next = await runInputSession(first.state, "改成今天午饭花35", { now, parse: async (_input, context) => {
+      const r = context.pending.recovery!;
+      return { ...create, patch: { ...create.patch, ...(invalid === "old-source" ? { category: { ...field("餐饮", "午饭"), turnId: r.turns[0].id } } : {}) }, recovery: { id: r.id, revision: r.revision, mode: "continue", superseded: [{ turnId: invalid === "turn" ? "unknown" : r.turns[0].id, evidence: invalid === "evidence" ? "没说过" : "改成今天午饭花35", fields: [invalid === "field" ? "date" : invalid === "old-source" ? "category" : "amount"] }] } };
+    } });
+    assert.equal(next.failure, "invalid_decision", invalid);
+    assert.equal(confirmRecordDraft(next.state).ledgerEntries.length, 0);
+  }
+});
+
+test("consecutive recovery corrections preserve independent pending fields and commit once", async () => {
+  const initial = await runInputSession(empty(), "午饭花35", { now, parse: async () => create });
+  const failed = await runInputSession(initial.state, "改成昨天", { now, parse: async () => { throw Error("offline"); } });
+  const failedAgain = await runInputSession(failed.state, "金额改45", { now, parse: async () => { throw Error("offline"); } });
+  const next = await runInputSession(failedAgain.state, "金额还是改50", { now, parse: async (_input, context) => {
+    const r = context.pending.recovery!;
+    return { action: "write", operation: "create", kind: "ledger", recovery: { id: r.id, revision: r.revision, mode: "continue", superseded: [{ turnId: r.turns[1].id, evidence: "金额还是改50", fields: ["amount"] }] }, patch: { date: { ...field({ type: "relative_day", offset: -1 }, "昨天"), turnId: r.turns[0].id }, amount: field("50", "50") } };
+  } });
+  assert.equal(next.failure, null);
+  assert.equal(next.state.writeSession?.draft?.fields.category, "餐饮");
+  assert.equal(next.state.writeSession?.draft?.fields.date, "2026-09-06");
+  assert.equal(next.state.writeSession?.draft?.fields.amountCents, 5000);
+  assert.equal(next.state.ledgerEntries.length, 0);
+  assert.equal(confirmRecordDraft(confirmRecordDraft(next.state)).ledgerEntries.length, 1);
 });

@@ -40,3 +40,14 @@
 - `npm run test:write-v2`：失败恢复、草稿保护、来源引用、跨午夜、版本拒绝、新话题隔离、过期、容量、取消、确认 Tool 与单次修复。
 - `scripts/eval-input-recovery.ts`：先注入已知故障/澄清，再由真实 DeepSeek 解析补充答案，测量条件恢复能力；不能将其等同于一般准确率。
 - `scripts/eval-write-flow-v2-live.ts`：保持原七条样例及答案，对照整体多轮表现。结果见 `docs/evals/input-recovery-live-results.json` 和 `docs/evals/write-flow-v2-after-recovery.json`。
+
+
+## 2026-09-12：纠正覆盖与统一来源判定
+
+`continue` 支持可选 `recovery.superseded: [{ turnId, evidence, fields }]`：模型声明某轮原话被本轮纠正/重述覆盖，列出本轮 patch 的覆盖字段。程序要求轮次存在且不重复、声明逐字引自本轮、字段确实存在且其 evidence 包含在该声明中，不允许用旧 turnId 冒充新覆盖字段。未被覆盖的轮次仍须有有效旧来源引用，否则阻止确认。
+
+覆盖声明表达语义关系，不将失败字段变成有效草稿，也不免除金额、日期、类别和字段来源校验。单字段纠正仍须重新提取其他有效旧信息；已有有效草稿中未修改字段由程序保留。无法判断是否遗漏应澄清。程序能检查证据引用和字段结构，不能仅靠字符串检查证明模型完整理解了每个旧字段，因此仍需多轮评测和用户预览确认。
+
+校验和字段应用共用 `resolvePatchSource`：显式 turnId 优先；无 turnId 且本轮包含 evidence 时归本轮；否则只有唯一旧来源匹配才可归旧轮。相同词出现在新旧两轮时，不再误算成已处理旧轮。本轮同词不继承旧日期的时间参照。
+
+模型仍需返回 recovery id/revision；既有 stale 检查保留。恢复时 create/revise 和草稿身份已由 session 按当前状态决定。本轮没有扩大到全部模型协议迁移。

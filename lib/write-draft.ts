@@ -1,3 +1,4 @@
+import { resolvePatchSource } from "./input-recovery";
 import { inputDecisionSchema } from "./write-contract";
 import type { WriteDecision, WriteDraft, WriteFields } from "./write-contract";
 import { parseMoneyText, resolveCalendarDate } from "./write-values";
@@ -19,8 +20,7 @@ export function applyWritePatch(previous: WriteDraft | null, inputDecision: unkn
   };
   const fields: WriteFields = { ...draft.fields };
   for (const [name, change] of Object.entries(decision.patch)) {
-    const matches = change && !change.turnId && !input.includes(change.evidence) ? sources.filter(turn => turn.input.includes(change.evidence)) : [];
-    const source = change?.turnId ? sources.find(turn => turn.id === change.turnId) : matches.length === 1 ? matches[0] : { input, referenceNow: now };
+    const source = change ? resolvePatchSource(change, input, now, sources) : undefined;
     if (!change || !source || !source.input.includes(change.evidence)) return { ok: false, code: "evidence", message: "有字段无法对应到输入来源，请重新说明。" };
     let value: unknown = change.value;
     if (["title", "location", "notes", "counterparty", "note"].includes(name) && typeof value === "string" && !change.evidence.includes(value)) {

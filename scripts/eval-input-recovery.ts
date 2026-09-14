@@ -51,7 +51,9 @@ async function main() {
   }
   const files = ["lib/input-recovery.ts", "lib/write-session.ts", "lib/write-contract.ts", "lib/write-draft.ts", "server/ai/deepseek-input-decision.ts", "scripts/eval-input-recovery.ts"];
   const report = { generatedAt: new Date().toISOString(), model: process.env.DEEPSEEK_MODEL || "deepseek-v4-flash", method: "Injected initial failure or clarification, one live planner invocation per follow-up, at most one validation repair; conditional recovery test, not general accuracy", sourceHashes: Object.fromEntries(files.map(file => [file, createHash("sha256").update(readFileSync(file)).digest("hex")])), summary: { cases: rows.length, passed: rows.filter(row => row.passed).length, fallback: rows.filter(row => row.source === "local").length, providerCalls: rows.reduce((sum, row) => sum + row.providerCalls, 0) }, rows };
-  writeFileSync("docs/evals/input-recovery-live-results.json", JSON.stringify(report, null, 2));
+  const outIndex = process.argv.indexOf("--out");
+  const output = outIndex >= 0 ? process.argv[outIndex + 1] : "docs/evals/input-recovery-live-results.json";
+  writeFileSync(output, JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report.summary));
   if (report.summary.passed !== report.summary.cases) process.exitCode = 1;
 }

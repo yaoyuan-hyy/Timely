@@ -1,213 +1,106 @@
-# Timely
+# Timely · 用自然语言记录日常
 
-Timely is a mobile-first Web/PWA client for natural-language personal records.
+一个可运行的 AI 个人记录原型：用一句话记账、记录日程，并查询已经保存的记录。重点探索**自然语言输入有遗漏或错误时，怎样让用户顺利补充、纠正并确认保存**。
 
-The current interface uses a persistent desktop sidebar and mobile bottom navigation, with a shared visual system for chat, calendar, ledger, and local data settings. The primary implementation remains the Next app; `public/app.js` is a legacy static preview.
+当前阶段：本地优先的功能原型，有自动化回归和小规模真实模型评测；尚未完成真实用户研究、留存验证或生产规模验证。
 
-Ledger writes and v2 queries share a [standard category contract](docs/architecture/ledger-category-contract.md). The model chooses canonical category names; specific activities remain in notes/source text. Exact legacy labels remain readable and queryable through category compatibility mapping.
+## 三分钟了解这个项目
 
-## Repository layout
+- [产品案例：问题、取舍与迭代](docs/portfolio/case-study.md)
+- [端到端演示与复现步骤](docs/portfolio/demo.md)
+- [评测结果与证据边界](docs/portfolio/evidence.md)
+- [真实用户测试方案](docs/research/usability-study.md)（待执行）
 
-- `app/`, `components/`, `hooks/`: Next routes and UI (`app/api/` is the HTTP boundary).
-- `server/`: server-only AI adapters; `lib/`: shared domain logic and contracts.
-- `tests/`, `evals/`, `scripts/`: tests, frozen data, and execution scripts.
-- `docs/`: architecture, progress, plans, evaluation reports; reference images are in `docs/design/references/`.
-- `public/`: static assets and the legacy preview. From the repository root, `node scripts/preview-server.mjs` runs that preview only; use `npm run dev` for the actual app and API.
-
-Next configuration, package files and `.env.local` remain at the root. Generated caches/logs are ignored; TypeScript's incremental cache lives in `.timely-test/`. Root cleanup backups are temporarily retained in `.timely-test/cleanup-backup/` for recovery.
-
-The product is not a reminder app, planning app, task manager, focus timer, or productivity analytics tool. The current app is event-first, with an independent local ledger-record surface and local query feedback already present:
+## 核心体验
 
 ```text
-Natural-language input
-  -> unified InputDecision planner (/api/input-decision)
-  -> validated write patches / unresolved context / read-only Query Agent v2
-  -> preview a single event/ledger draft
-  -> confirm to commit that record into TimelyState
-  -> persist in localStorage
-  -> events appear in calendar/timeline views; ledger entries appear in the ledger view; query results open UI cards
+“昨天午饭” → 补充金额 → “花35元” → 预览日期、金额、分类
+→ “金额改45元” → 更新预览 → 用户确认 → 流水中查看
 ```
 
-## Stack
+也支持日程记录和查询。所有具体措辞由模型理解，流程示意不保证每次生成相同追问。
 
-- Next.js 14
-- React 18
-- TypeScript
-- LangGraph JS (`@langchain/langgraph`) for the supervisor/write/query workflows
-- Zod for AI result and eval dataset validation
-- Plain CSS in `app/globals.css`
-- `lucide-react` icons
-- Browser `localStorage` under `timely-event-record-state-v1`
+![真实演示：确认后保存的流水](docs/portfolio/assets/03-saved-ledger.png)
 
-## Run Locally
+## 为什么这样设计
 
-Install and run:
+| 产品问题 | 当前决策 | 代价与待验证问题 |
+| --- | --- | --- |
+| AI 理解错了就写入，用户难以信任 | 写入先预览，用户确认后单条保存 | 多一次操作；是否影响轻量记录体验，需要用户测试 |
+| 用户短答后丢失原来的日期或事项 | 有效草稿与失败原话隔离，字段带来源，纠正可明确覆盖旧信息 | 协议更复杂，语义遗漏仍需评测 |
+| 金额统计不能依赖模型口算 | 模型只输出查询计划，程序过滤并计算 | 仅支持已定义的查询能力 |
+| “午饭”和“餐饮”混用导致查不到记录 | 写入与查询共用分类契约，具体事项放备注 | 分类边界需持续验证 |
+
+## 当前架构
+
+```text
+输入 → /api/input-decision → 校验 InputDecision
+  写入：字段合并 / 追问恢复 → 预览 → 确认 → 单条提交
+  查询：Query Agent v2 → execute / clarify / unsupported
+        execute → queryRecords → Repository → 确定性计算 → 结果卡片
+  已保存记录 → 浏览器 localStorage
+```
+
+模型通过服务端调用，密钥不传浏览器。模型会收到当前输入和受限待处理上下文，不接收完整个人记录集合。记录本地存储并不等于解析过程完全离线。
+
+实际 UI 走统一 InputDecision；独立 Query Planner 有规则基线及模型评测入口。旧 supervisor/write workflow 和旧 API 保留兼容，不应理解为多套入口同时驱动当前 UI。[架构详情](docs/architecture/ARCHITECTURE.md)
+
+技术：Next.js 14、React 18、TypeScript、Zod、LangGraph、Plain CSS、DeepSeek。前端和 API 由同一个 Next 服务启动，按目录分离职责。
+
+## 已有证据
+
+| 评测 | 保存结果 | 能说明什么 |
+| --- | --- | --- |
+| Query v2 冻结 test，2026-09-07 | 严格 12/18；3 条规则回退单独记录 | 该次固定样例表现，不是生产准确率 |
+| Write 冻结回归，2026-09-12 | 严格 6/7，13 次请求、fallback 0 | 整条对话严格计分；保留失败 |
+| 新增纠正对话，2026-09-12 | 3/3，7 次请求 | 小规模纠正路径验证 |
+| 故障注入后的恢复专项，2026-09-12 | 6/6，7 次请求，含一次修复 | 给定失败条件后的恢复能力 |
+
+这些集合不能合并成一个“Agent 准确率”。数据、计分方式和失败解释见[证据索引](docs/portfolio/evidence.md)。
+
+## 手机 App 验证
+
+已加入 Capacitor iOS/Android 工程和独立移动构建入口，复用现有 React UI。当前完成工程与静态构建，尚未生成安装包或完成真机测试；需要实际 HTTPS 后端及原生工具链。[移动端配置与验收](docs/mobile/README.md)
+
+## 本地运行
 
 ```bash
 npm ci
+# 仅首次创建；已有 .env.local 时不要覆盖
 cp .env.example .env.local
-# Fill DEEPSEEK_API_KEY in .env.local, then:
+# 在 .env.local 中填写 DEEPSEEK_API_KEY
 npm run dev
 ```
 
-Then open:
-
-```text
-http://localhost:3000
-```
-
-The server uses `deepseek-v4-flash` at `https://api.deepseek.com/chat/completions`.
-Set `DEEPSEEK_API_KEY` in `.env.local`; `DEEPSEEK_BASE_URL` and `DEEPSEEK_MODEL` are optional overrides. Restart the dev server after changing environment variables. Existing `OPENAI_*` / `MINIMAX_*` variables no longer configure this app.
-
-Next starts both the browser UI and API routes with this one command. Failed or ambiguous inputs retain bounded unresolved context for follow-up; corrections preserve validated fields, and unresolved corrections block saving the old preview. See [input context recovery](docs/architecture/input-context-recovery.md). Reload clears unfinished write sessions.
-
-With the server running, `npm run test:ai` checks real event, ledger, and clarification parsing (four API requests). This is separate from `npm test`, which uses mocked HTTP and requires no token. These checks parse sample inputs without writing browser records.
-
-## Current App
-
-- Creation and correction show a preview before saving; confirm, edit/re-enter, or cancel. Event cancellations retain their existing recoverable behavior.
-- Local corrections support `刚才那条改到下午四点`, `上一笔改成58元`, `会议地点改成公司`, and `不是支出，是收入`. Ambiguous matches ask for a numbered selection or a date/time.
-- Chat includes mixed recent records and search. Search and query cards open the relevant Shanghai calendar day or ledger month.
-- Possible duplicate records show a warning with an explicit “仍然保存” action. AI failures show local fallback and allow retry with the original input/context.
-- Settings exports versioned JSON backups and previews imports before merging. Same-ID conflicts preserve current records. Backups include events (including cancelled events) and ledger entries, excluding chat and unconfirmed work.
-- Mobile-first Timely app shell.
-- Four views: Chat, Records, Ledger, Settings.
-- Natural-language creation and correction through `/api/input-decision`; `/api/record-input` remains a v1 compatibility route. Offline continuation is limited to an unambiguous scalar amount when exactly that slot is missing and no recovery is pending.
-- Natural-language schedule/ledger/task-like queries through a local query agent.
-- Event records support past and future time points, one concise clarification, cancellation, restoration, and permanent deletion from cancelled records.
-- Ledger entries are a separate record type; they do not reuse `CalendarEvent`.
-- Query results are emitted as strict ````json UI_POPUP` blocks and rendered as in-app cards/windows.
-- State is local-first and normalized on load so old or malformed local data does not crash the app.
-- `public/app.js` is a static preview/compatibility surface, not the long-term business implementation.
-
-## Multi-Agent Workflow
-
-For capability-level evaluation, run `npm run bench:queries` (18 frozen regression cases) or add `-- --live` for DeepSeek. The benchmark contains 28 total cases across seven dimensions and supports `--runs`, `--compare`, and `--gate`. See [benchmark methodology and measured results](docs/evals/query-benchmark-v1.md); the earlier six-case eval remains a smoke suite, not an accuracy estimate.
-
-Query Agent v2 uses `QueryDecision → execute / clarify / unsupported`. Execute validates a declarative `QueryPlanV2`, retrieves records through `queryRecords` and `RecordRepository`, then computes count/sum/average/max/min locally before UI_POPUP formatting. Clarify and unsupported never call query tools. The default planner remains rule-based; inject `parseQueryDecision` to evaluate the model. The provider receives only input and reference time, never records. Query follow-ups use separate local conversation state with a 15-minute lifetime. Confirmed drafts retain their separate UI-only commit capability.
-
-Run `npm run test:query-v2` for v2 regressions and `npm run bench:queries:v2 -- --live` for explicit model evaluation. The v2 dataset preserves all 28 v1 inputs/IDs/splits and adds decision/plan/execution/E2E scores. `bench:queries` and `eval:queries` retain the historical v1 workflow for comparison; reports with different scorer versions are not directly comparable. See [v2 methodology](docs/evals/query-benchmark-v2.md).
-
-Run `npm run eval:queries` for the fixed offline baseline. Run `npm run eval:queries -- --live` to compare DeepSeek on the same six synthetic cases using server environment configuration. Reports separate plan accuracy, result accuracy and fallback counts; a fallback never earns model credit. The app does not switch to model query parsing automatically.
-
-The UI first calls `lib/record-session.ts` for local edit resolution and fallback metadata. Existing workflows return proposals; `lib/record-draft.ts` stages a single record without saving it. Confirmation validates and commits only that record, preserving concurrent manual edits. Pending confirmations and edit selections are session-only and are cleared on reload; existing missing-field clarification remains compatible.
-
-Timely now uses a LangGraph supervisor workflow in `lib/agent/app-workflow.ts`. It classifies each input and routes it to one of three agents:
-
-```text
-classify_intent
-  -> query_agent
-  -> write_agent
-  -> chat_agent
-```
-
-- `query_agent`: handles personal-data queries such as schedule, spending, and task-like questions.
-- `write_agent`: delegates to the existing record workflow for event and ledger creation/deletion.
-- `chat_agent`: gives a lightweight fallback response for non-data conversation.
-
-The write agent remains the thin orchestration layer in `lib/agent/record-workflow.ts`:
-
-```text
-normalize_input
-  -> call_ai_parser
-    -> apply_ai_result
-    -> apply_local_fallback
-  -> summarize_outcome
-```
-
-Node responsibilities:
-
-- `normalize_input`: trims the user input and starts the trace.
-- `call_ai_parser`: calls the injected parser, normally `/api/record-input`; failures are captured as `aiError` instead of crashing the UI.
-- `apply_ai_result`: applies a structured AI result through `resolveRecordInputWithAi`, which still rejects inconsistent AI outputs and falls back internally where needed.
-- `apply_local_fallback`: applies the deterministic local parser through `resolveRecordInput`.
-- `summarize_outcome`: labels the run as `event_created`, `event_cancelled`, `ledger_created`, `clarification_requested`, `unsupported`, and so on.
-
-The query agent in `lib/agent/query-workflow.ts` is local-first:
-
-```text
-normalize_query
-  -> decide_query
-      -> clarify -> format_clarification -> END
-      -> unsupported -> format_unsupported -> END
-      -> execute -> validate_query_plan -> query_records
-          -> aggregate_records -> format_query_result -> END
-```
-
-It queries `TimelyState.events` and `TimelyState.ledgerEntries`, including common Chinese time windows such as `明天下午`, `昨晚`, and `下周三`, then emits a response with a short intro plus a strict UI trigger block:
-
-````text
-我查到了，明天有 1 条安排。
-
-```json UI_POPUP
-{"type":"timely_query_result","query_kind":"schedule","query_status":"success",...}
-```
-````
-
-If execution matches no records, the agent emits `UI_POPUP` with `query_status: "empty"`. Clarification and unsupported decisions emit short text without a popup. Average rounds half-up to integer cents and retains the numerator/count for verification; empty average/max/min are null, while empty count/sum are zero. Net income uses signed income-minus-expense cents.
-
-The chat submit hook (`hooks/use-record-submit.ts`) calls `runTimelyAgentWorkflow`, so the product path and the tested multi-agent path are the same path. The API route shape is unchanged:
-
-```text
-POST /api/record-input
-{ input: string, now?: string } -> { result }
-```
-
-## Eval Dataset
-
-The offline eval set lives in `evals/record-input-cases.jsonl`. It covers representative Chinese inputs for:
-
-- event creation
-- travel-like event creation
-- missing event time clarification
-- event deletion
-- ledger expense and income creation
-- missing ledger amount clarification
-- quantity/date numbers that must not become amounts
-- unsupported reminder requests
-- query-popup parsing and local query results
-
-Run the eval:
+打开 http://localhost:3000。`DEEPSEEK_BASE_URL` 默认 `https://api.deepseek.com`，`DEEPSEEK_MODEL` 默认 `deepseek-v4-flash`。修改配置后重启。`.env.local` 不提交到 Git。
 
 ```bash
-npm run eval:records
-```
-
-The runner (`scripts/eval-record-workflow.ts`) validates JSONL cases with Zod, invokes the LangGraph workflow with deterministic IDs, scores declared expectations, and prints a pass rate. It defaults to local fallback so it is stable in CI and can later be extended to send traces/results to LangSmith, LangFuse, or W&B Weave.
-
-## Verification
-
-Common checks:
-
-```bash
-node --test tests/ui-shell.test.ts
 npm test
-npm run test:agent
-npm run eval:records
 npm run typecheck
-node --check public/app.js
 npm run lint
-git diff --check
 npm run build
 ```
 
-`npm run lint` and `npm run build` may show the existing local warning for `NODE_TLS_REJECT_UNAUTHORIZED=0`; treat that separately from actual lint/build failures.
+测试默认不消耗模型 API；真实评测需明确运行 live 脚本，详见[评测复现](docs/evals/2026-09-12-input-correction.md)。
 
-## Product Docs
+## 范围与限制
 
-- `AGENTS.md`: operating standard for agents working on Timely
-- `docs/progress.md`: current progress, known issues, and suggested next steps
-- `docs/product/PRD.md`: product requirements
-- `docs/architecture/ARCHITECTURE.md`: architecture notes
-- `docs/plans/IMPLEMENTATION_PLAN.md`: historical implementation plan
+- 支持独立日程/流水、多轮补充和纠正、查询卡片、日程取消恢复、本地备份导入导出。
+- 不做提醒通知、任务规划、账号、云同步或完整财务管理；麦克风仍为禁用占位。
+- 时区固定 Asia/Shanghai；浏览器存储不跨设备，刷新会清除未完成草稿。
+- 模型有波动，当前评测很小，尚无真实用户体验收益数据。
 
-## Project Layout
+## 目录与阅读入口
 
-- `app/`, `components/`, `hooks/`: browser UI and client interactions
-- `lib/`: shared domain, state, time, and validation logic
-- `server/`: server-only AI provider adapters; these modules read API credentials
-- `app/api/`: thin Next.js HTTP boundaries that call server adapters
-- `docs/`: product, architecture, plan, deployment, and progress documentation
-- `tests/`, `scripts/`, `evals/`: verification and evaluation tooling
+| 目录 | 职责 |
+| --- | --- |
+| app / components / hooks | 页面、交互与 Next API 路由 |
+| server/ai | 服务端模型适配器 |
+| lib | 契约、会话、Repository、Tool 与确定性计算 |
+| tests / evals / scripts | 自动化测试、数据集、评测工具 |
+| docs | 产品决策、演示、研究方案、架构和历史报告 |
+| public | 静态资源与旧预览兼容实现 |
 
-The browser never receives `DEEPSEEK_API_KEY`. AI calls stay behind the Next.js API routes; shared domain code remains provider-agnostic so local fallback and tests do not depend on a network request.
+[当前 PRD](docs/product/PRD.md) · [进度](docs/progress.md) · [分类契约](docs/architecture/ledger-category-contract.md) · [恢复契约](docs/architecture/input-context-recovery.md) · [协作规范](AGENTS.md)
+
+项目使用 AI 编程工具辅助实现、测试和文档整理。个人职责与贡献应由作者在简历中如实说明；仓库不将生成代码量作为产品能力证明。

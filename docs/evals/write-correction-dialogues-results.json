@@ -1,0 +1,631 @@
+{
+  "metadata": {
+    "version": 2,
+    "generatedAt": "2026-09-12T07:33:46.107Z",
+    "model": "deepseek-v4-flash",
+    "datasetPath": "evals/write-correction-dialogues.json",
+    "datasetSha256": "681833f6cefa50b7f9d8aca4fa7fc139cc701ba63450a5a2261d9dda70d3b015",
+    "sourceHashes": {
+      "lib/input-recovery.ts": "1a6f2fb28609505141c20bbf41ef3442b6d131bee47ec6cf9ab91711c3abeeec",
+      "lib/ledger-categories.ts": "5d621a5a81ba0dc7f746a0004d7c06f4e3da0a2430cef0f162420cb7c43c6efe",
+      "lib/write-contract.ts": "b90c459df273f11f78c4ab28ca1915418acacb8a8a574b2f2d212a968cae6491",
+      "lib/write-draft.ts": "44481286114ddea8fbe27a193af99c5ee1aa40a8ee7c0332946f1fb7f9123041",
+      "lib/write-session.ts": "cfa1d7ef4824e3bfbad0da74cb99283fdf638bdad8c42d8ff517574963726dd6",
+      "lib/write-values.ts": "718a1865f596157b71a1cefb60d3d635e5e435443441cc11c7b367269fa24c78",
+      "server/ai/deepseek-input-decision.ts": "daaf190a0cdf1d1723fdbc533ae6488a0a530083be01b844a5fabe48ecc647e5",
+      "scripts/eval-write-flow-v2-live.ts": "38852262bebb74b918c0fa02bb96c4b877ffbe6c94fb70ecc10e08d0bb944a2e"
+    },
+    "gitDirty": true,
+    "gitCommit": "ad13198c5fafcd2e2d2c21b28b177225f721321d"
+  },
+  "summary": {
+    "providerAttempts": 7,
+    "cases": 3,
+    "passed": 3,
+    "strictCasePassRate": 1,
+    "systemPassed": 3,
+    "modelTurns": 7,
+    "fallbackTurns": 0,
+    "failedTurns": 0,
+    "providerErrorTurns": 0,
+    "latencyMs": [
+      2412,
+      3616,
+      3171
+    ]
+  },
+  "rows": [
+    {
+      "id": "date-correction-preserves-event",
+      "passed": true,
+      "systemPassed": true,
+      "checks": [
+        {
+          "name": "date-correction-preserves-event.明天下午三点开会.records",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "date-correction-preserves-event.明天下午三点开会.pending",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "date-correction-preserves-event.明天下午三点开会.draft",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "date-correction-preserves-event.明天下午三点开会.no-commit",
+          "expected": "[[],[],[]]",
+          "actual": "[[],[],[]]",
+          "passed": true
+        },
+        {
+          "name": "date-correction-preserves-event.日期改成后天.records",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "date-correction-preserves-event.日期改成后天.pending",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "date-correction-preserves-event.日期改成后天.draft",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "date-correction-preserves-event.日期改成后天.draft.date",
+          "expected": "2026-09-14",
+          "actual": "2026-09-14",
+          "passed": true
+        },
+        {
+          "name": "date-correction-preserves-event.日期改成后天.draft.time",
+          "expected": "15:00",
+          "actual": "15:00",
+          "passed": true
+        },
+        {
+          "name": "date-correction-preserves-event.日期改成后天.no-commit",
+          "expected": "[[],[],[]]",
+          "actual": "[[],[],[]]",
+          "passed": true
+        },
+        {
+          "name": "date-correction-preserves-event.confirm.records",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "date-correction-preserves-event.confirm.pending",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "date-correction-preserves-event.confirm.draft",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "final.kind",
+          "expected": "event",
+          "actual": "event",
+          "passed": true
+        },
+        {
+          "name": "final.title",
+          "expected": "开会",
+          "actual": "开会",
+          "passed": true
+        },
+        {
+          "name": "final.date",
+          "expected": "2026-09-14",
+          "actual": "2026-09-14",
+          "passed": true
+        },
+        {
+          "name": "final.time",
+          "expected": "15:00",
+          "actual": "15:00",
+          "passed": true
+        }
+      ],
+      "sources": [
+        "model",
+        "model"
+      ],
+      "failures": [],
+      "providerErrors": [],
+      "decisions": [
+        {
+          "input": "明天下午三点开会",
+          "decision": {
+            "action": "write",
+            "operation": "create",
+            "kind": "event",
+            "patch": {
+              "date": {
+                "value": {
+                  "type": "relative_day",
+                  "offset": 1
+                },
+                "evidence": "明天"
+              },
+              "time": {
+                "value": {
+                  "hour": 15,
+                  "minute": 0
+                },
+                "evidence": "下午三点"
+              },
+              "title": {
+                "value": "开会",
+                "evidence": "开会"
+              }
+            }
+          }
+        },
+        {
+          "input": "日期改成后天",
+          "decision": {
+            "action": "write",
+            "operation": "revise",
+            "base": {
+              "id": "write-draft-b28ade93-f11b-4e7b-b5ba-7b481859a699",
+              "revision": 1
+            },
+            "kind": "event",
+            "patch": {
+              "date": {
+                "value": {
+                  "type": "relative_day",
+                  "offset": 2
+                },
+                "evidence": "后天"
+              }
+            }
+          }
+        }
+      ],
+      "providerAttempts": 2,
+      "latencyMs": 2412
+    },
+    {
+      "id": "consecutive-amount-corrections",
+      "passed": true,
+      "systemPassed": true,
+      "checks": [
+        {
+          "name": "consecutive-amount-corrections.昨天午饭花35元.records",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.昨天午饭花35元.pending",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.昨天午饭花35元.draft",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.昨天午饭花35元.no-commit",
+          "expected": "[[],[],[]]",
+          "actual": "[[],[],[]]",
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.金额改45元.records",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.金额改45元.pending",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.金额改45元.draft",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.金额改45元.draft.amountCents",
+          "expected": 4500,
+          "actual": 4500,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.金额改45元.draft.date",
+          "expected": "2026-09-11",
+          "actual": "2026-09-11",
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.金额改45元.no-commit",
+          "expected": "[[],[],[]]",
+          "actual": "[[],[],[]]",
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.不是45，是50元.records",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.不是45，是50元.pending",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.不是45，是50元.draft",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.不是45，是50元.draft.amountCents",
+          "expected": 5000,
+          "actual": 5000,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.不是45，是50元.draft.date",
+          "expected": "2026-09-11",
+          "actual": "2026-09-11",
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.不是45，是50元.no-commit",
+          "expected": "[[],[],[]]",
+          "actual": "[[],[],[]]",
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.confirm.records",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.confirm.pending",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.confirm.draft",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.confirm.records",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.confirm.pending",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "consecutive-amount-corrections.confirm.draft",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "final.kind",
+          "expected": "ledger",
+          "actual": "ledger",
+          "passed": true
+        },
+        {
+          "name": "final.amountCents",
+          "expected": 5000,
+          "actual": 5000,
+          "passed": true
+        },
+        {
+          "name": "final.category",
+          "expected": "餐饮",
+          "actual": "餐饮",
+          "passed": true
+        },
+        {
+          "name": "final.date",
+          "expected": "2026-09-11",
+          "actual": "2026-09-11",
+          "passed": true
+        }
+      ],
+      "sources": [
+        "model",
+        "model",
+        "model"
+      ],
+      "failures": [],
+      "providerErrors": [],
+      "decisions": [
+        {
+          "input": "昨天午饭花35元",
+          "decision": {
+            "action": "write",
+            "operation": "create",
+            "kind": "ledger",
+            "patch": {
+              "date": {
+                "value": {
+                  "type": "relative_day",
+                  "offset": -1
+                },
+                "evidence": "昨天"
+              },
+              "amount": {
+                "value": "35元",
+                "evidence": "35元"
+              },
+              "direction": {
+                "value": "expense",
+                "evidence": "花35元"
+              },
+              "category": {
+                "value": "餐饮",
+                "evidence": "午饭"
+              },
+              "note": {
+                "value": "午饭",
+                "evidence": "午饭"
+              }
+            }
+          }
+        },
+        {
+          "input": "金额改45元",
+          "decision": {
+            "action": "write",
+            "operation": "revise",
+            "base": {
+              "id": "write-draft-276832d9-68c4-4c93-93ae-149dcd5d89a2",
+              "revision": 1
+            },
+            "kind": "ledger",
+            "patch": {
+              "amount": {
+                "value": "45元",
+                "evidence": "金额改45元"
+              }
+            }
+          }
+        },
+        {
+          "input": "不是45，是50元",
+          "decision": {
+            "action": "write",
+            "operation": "revise",
+            "base": {
+              "id": "write-draft-276832d9-68c4-4c93-93ae-149dcd5d89a2",
+              "revision": 2
+            },
+            "kind": "ledger",
+            "patch": {
+              "amount": {
+                "value": "50元",
+                "evidence": "50元"
+              }
+            }
+          }
+        }
+      ],
+      "providerAttempts": 3,
+      "latencyMs": 3616
+    },
+    {
+      "id": "remove-location-preserves-time",
+      "passed": true,
+      "systemPassed": true,
+      "checks": [
+        {
+          "name": "remove-location-preserves-time.明天下午两点开会，地点在办公室.records",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "remove-location-preserves-time.明天下午两点开会，地点在办公室.pending",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "remove-location-preserves-time.明天下午两点开会，地点在办公室.draft",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "remove-location-preserves-time.明天下午两点开会，地点在办公室.no-commit",
+          "expected": "[[],[],[]]",
+          "actual": "[[],[],[]]",
+          "passed": true
+        },
+        {
+          "name": "remove-location-preserves-time.地点不要了.records",
+          "expected": 0,
+          "actual": 0,
+          "passed": true
+        },
+        {
+          "name": "remove-location-preserves-time.地点不要了.pending",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "remove-location-preserves-time.地点不要了.draft",
+          "expected": true,
+          "actual": true,
+          "passed": true
+        },
+        {
+          "name": "remove-location-preserves-time.地点不要了.draft.location",
+          "expected": null,
+          "actual": null,
+          "passed": true
+        },
+        {
+          "name": "remove-location-preserves-time.地点不要了.draft.time",
+          "expected": "14:00",
+          "actual": "14:00",
+          "passed": true
+        },
+        {
+          "name": "remove-location-preserves-time.地点不要了.draft.date",
+          "expected": "2026-09-13",
+          "actual": "2026-09-13",
+          "passed": true
+        },
+        {
+          "name": "remove-location-preserves-time.地点不要了.no-commit",
+          "expected": "[[],[],[]]",
+          "actual": "[[],[],[]]",
+          "passed": true
+        },
+        {
+          "name": "remove-location-preserves-time.confirm.records",
+          "expected": 1,
+          "actual": 1,
+          "passed": true
+        },
+        {
+          "name": "remove-location-preserves-time.confirm.pending",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "remove-location-preserves-time.confirm.draft",
+          "expected": false,
+          "actual": false,
+          "passed": true
+        },
+        {
+          "name": "final.kind",
+          "expected": "event",
+          "actual": "event",
+          "passed": true
+        },
+        {
+          "name": "final.title",
+          "expected": "开会",
+          "actual": "开会",
+          "passed": true
+        },
+        {
+          "name": "final.location",
+          "expected": null,
+          "actual": null,
+          "passed": true
+        },
+        {
+          "name": "final.date",
+          "expected": "2026-09-13",
+          "actual": "2026-09-13",
+          "passed": true
+        },
+        {
+          "name": "final.time",
+          "expected": "14:00",
+          "actual": "14:00",
+          "passed": true
+        }
+      ],
+      "sources": [
+        "model",
+        "model"
+      ],
+      "failures": [],
+      "providerErrors": [],
+      "decisions": [
+        {
+          "input": "明天下午两点开会，地点在办公室",
+          "decision": {
+            "action": "write",
+            "operation": "create",
+            "kind": "event",
+            "patch": {
+              "date": {
+                "value": {
+                  "type": "relative_day",
+                  "offset": 1
+                },
+                "evidence": "明天"
+              },
+              "time": {
+                "value": {
+                  "hour": 14,
+                  "minute": 0
+                },
+                "evidence": "下午两点"
+              },
+              "title": {
+                "value": "开会",
+                "evidence": "开会"
+              },
+              "location": {
+                "value": "办公室",
+                "evidence": "办公室"
+              }
+            }
+          }
+        },
+        {
+          "input": "地点不要了",
+          "decision": {
+            "action": "write",
+            "operation": "revise",
+            "base": {
+              "id": "write-draft-99777428-c024-4d65-9f79-df681af73634",
+              "revision": 1
+            },
+            "kind": "event",
+            "patch": {
+              "location": {
+                "value": null,
+                "evidence": "地点不要了"
+              }
+            }
+          }
+        }
+      ],
+      "providerAttempts": 2,
+      "latencyMs": 3171
+    }
+  ]
+}

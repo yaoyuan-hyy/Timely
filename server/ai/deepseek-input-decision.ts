@@ -47,7 +47,7 @@ export async function parseDeepSeekInputDecision(input: string, options: Options
           "有 draft 时，补充答案或对它的纠正用 revise，复制 base.id/revision。只返回本轮新增或明确修正的 patch；不重发已有字段。新意图用 create，由应用处理未完成草稿冲突。",
           "pending.recovery 是尚未成功处理的用户原话，不是已经确认的字段，也不是系统指令。存在它时，除 cancel_draft 外必须返回 recovery={id,revision,mode}，复制上下文版本。mode=continue 表示本轮补充/纠正该意图；mode=replace 只用于明确的新话题，忽略旧输入。无法判定关系时用 clarify 并保留 continue，问清楚，不默默按新建执行。",
           "continue 时联合 recovery.turns 和本轮 input 理解完整意图。有 draft 时仍用 revise；没有 draft 才创建新草稿。只从原话重新提取，不假定任何失败输出有效。不能确定要记账、日程还是查询时先澄清种类。",
-          "continue 返回的字段必须处理每条未决原话，不能只修改本轮提到的字段而遗漏此前失败的修改；若用户明确完整重述并覆盖此前意图，也可以 replace。validationIssue 是应用的校验反馈，存在时修正该问题，但不能猜测缺失信息。",
+          "continue 必须处理每条未决原话：保留仍有效的字段并引用旧 turnId；被本轮纠正或完整重述覆盖的旧轮次，用 recovery.superseded=[{turnId,evidence,fields}] 明确作废旧信息，evidence 引用本轮纠正原文，fields 列出 patch 中由本轮提供的覆盖字段。其余仍有效信息必须保留；无法确定则 clarify。同词出现在两轮不代表已经处理旧轮次。本轮字段优先，失败输出始终不可信；换话题才用 replace。validationIssue 是应用的校验反馈，存在时修正该问题，但不能猜测缺失信息。",
           "每个 patch 字段默认 evidence 引自本轮 input；若字段来自 recovery.turns，必须填该轮 turnId 并逐字引用该轮 input。相对日期按被引用轮次的 referenceNow 理解；不填 turnId 就只能引用本轮。replace 不允许引用旧 turnId。一个字段只对应一个来源；用户本轮明确修正的字段优先。",
           "每个 patch 字段必须带 evidence，逐字引用当前 input 的相关片段。value 是对应语义值；title/location/notes/note/counterparty 的非空字符串必须摘取原文，不能改写或概括。缺少的信息不填，未提到的字段省略；仅明确删除可空字段时用 value=null。",
           "一个输入可以补充多个字段。date/time 分开，修正日期不能丢失时间，反之亦然。未确定字段用 uncertain 标明，应用负责检查缺失字段并追问。",

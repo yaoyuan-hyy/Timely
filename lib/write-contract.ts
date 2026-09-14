@@ -6,7 +6,7 @@ const ledgerCategorySchema = z.enum(LEDGER_CATEGORY_NAMES);
 const evidence = z.string().trim().min(1).max(2000);
 const text = z.string().trim().min(1).max(1000);
 const slot = <T extends z.ZodType>(value: T) => z.object({ value, evidence, turnId: z.string().min(1).max(100).optional() }).strict();
-const recoveryResolution = z.object({ id: z.string().min(1).max(100), revision: z.number().int().positive(), mode: z.enum(["continue", "replace"]) }).strict();
+const recoveryResolution = z.object({ id: z.string().min(1).max(100), revision: z.number().int().positive(), mode: z.enum(["continue", "replace"]), superseded: z.array(z.object({ turnId: z.string().min(1).max(100), evidence, fields: z.array(z.enum(["title", "date", "time", "endDate", "endTime", "amount", "direction", "category", "location", "notes", "note", "counterparty"])).min(1).max(12) }).strict()).max(4).optional() }).strict();
 export const inputRecoverySchema = z.object({
   id: z.string().min(1).max(100), revision: z.number().int().positive(),
   reason: z.enum(["provider", "invalid_decision", "invalid_value", "clarify"]),
